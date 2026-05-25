@@ -1,0 +1,590 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LLM Wiki 발표자료</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #18201c;
+        --muted: #65706a;
+        --line: #d9ded7;
+        --paper: #f7f5ef;
+        --surface: #ffffff;
+        --green: #176b5d;
+        --rust: #914b32;
+        --blue: #4f5f8c;
+        --gold: #c99a2e;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
+        color: var(--ink);
+        background: var(--paper);
+      }
+
+      a {
+        color: inherit;
+      }
+
+      .deck {
+        scroll-snap-type: y mandatory;
+        height: 100vh;
+        overflow-y: auto;
+      }
+
+      .slide {
+        min-height: 100vh;
+        scroll-snap-align: start;
+        display: grid;
+        grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
+        gap: 48px;
+        align-items: center;
+        padding: 72px clamp(24px, 7vw, 112px);
+        border-bottom: 1px solid var(--line);
+      }
+
+      .slide.single {
+        grid-template-columns: minmax(0, 1fr);
+        align-items: start;
+      }
+
+      .eyebrow {
+        color: var(--green);
+        font-size: 13px;
+        font-weight: 800;
+        letter-spacing: 0;
+        text-transform: uppercase;
+      }
+
+      h1,
+      h2 {
+        margin: 12px 0 18px;
+        letter-spacing: 0;
+        line-height: 1.06;
+      }
+
+      h1 {
+        font-size: clamp(44px, 7vw, 88px);
+        max-width: 980px;
+      }
+
+      h2 {
+        font-size: clamp(34px, 5vw, 64px);
+        max-width: 920px;
+      }
+
+      p {
+        color: var(--muted);
+        font-size: clamp(17px, 2vw, 22px);
+        line-height: 1.65;
+        margin: 0 0 24px;
+        max-width: 820px;
+      }
+
+      .lead {
+        color: #354039;
+        font-size: clamp(20px, 2.5vw, 28px);
+        line-height: 1.55;
+      }
+
+      .actions,
+      .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+      }
+
+      .button,
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        min-height: 40px;
+        padding: 10px 14px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--surface);
+        color: var(--ink);
+        font-size: 14px;
+        font-weight: 700;
+        text-decoration: none;
+      }
+
+      .button.primary {
+        border-color: var(--green);
+        background: var(--green);
+        color: white;
+      }
+
+      .visual {
+        position: relative;
+        min-height: 460px;
+        display: grid;
+        place-items: center;
+      }
+
+      .phone {
+        width: min(340px, 80vw);
+        min-height: 620px;
+        padding: 18px;
+        border: 10px solid #202823;
+        border-radius: 34px;
+        background: #f9f8f3;
+        box-shadow: 0 28px 70px rgb(24 32 28 / 18%);
+      }
+
+      .phone-bar {
+        width: 92px;
+        height: 5px;
+        margin: 0 auto 18px;
+        border-radius: 999px;
+        background: #202823;
+      }
+
+      .app-title {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 22px;
+        font-weight: 800;
+        margin-bottom: 16px;
+      }
+
+      .metric-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+        margin-bottom: 14px;
+      }
+
+      .metric,
+      .mini-card,
+      .feature,
+      .decision,
+      .roadmap-item {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--surface);
+      }
+
+      .metric {
+        padding: 12px;
+      }
+
+      .metric strong {
+        display: block;
+        font-size: 28px;
+      }
+
+      .metric span,
+      .mini-card span {
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .search {
+        height: 44px;
+        border-radius: 8px;
+        background: #e7eee9;
+        display: flex;
+        align-items: center;
+        padding: 0 12px;
+        color: #4f5b55;
+        margin-bottom: 12px;
+      }
+
+      .mini-card {
+        padding: 14px;
+        margin-bottom: 10px;
+      }
+
+      .mini-card strong {
+        display: block;
+        font-size: 17px;
+        margin: 4px 0 8px;
+      }
+
+      .tag-row {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+
+      .tag {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 5px 8px;
+        font-size: 12px;
+        background: #fbfaf6;
+      }
+
+      .feature-grid,
+      .decision-grid,
+      .roadmap {
+        display: grid;
+        gap: 14px;
+      }
+
+      .feature-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .decision-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .feature,
+      .decision {
+        padding: 18px;
+      }
+
+      .feature b,
+      .decision b,
+      .roadmap-item b {
+        display: block;
+        font-size: 18px;
+        margin-bottom: 8px;
+      }
+
+      .feature span,
+      .decision span,
+      .roadmap-item span {
+        color: var(--muted);
+        line-height: 1.55;
+      }
+
+      .decision:nth-child(1) {
+        border-top: 6px solid var(--green);
+      }
+
+      .decision:nth-child(2) {
+        border-top: 6px solid var(--rust);
+      }
+
+      .decision:nth-child(3) {
+        border-top: 6px solid var(--blue);
+      }
+
+      .decision:nth-child(4) {
+        border-top: 6px solid var(--gold);
+      }
+
+      .roadmap {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .roadmap-item {
+        padding: 22px;
+        min-height: 190px;
+      }
+
+      .number {
+        display: inline-grid;
+        place-items: center;
+        width: 36px;
+        height: 36px;
+        margin-bottom: 16px;
+        border-radius: 50%;
+        background: var(--green);
+        color: white;
+        font-weight: 800;
+      }
+
+      .quote {
+        padding: 24px;
+        border-left: 6px solid var(--green);
+        background: #eef3ef;
+        border-radius: 8px;
+        color: #2f3d35;
+        font-size: clamp(22px, 3vw, 34px);
+        line-height: 1.45;
+        max-width: 920px;
+      }
+
+      .nav {
+        position: fixed;
+        right: 18px;
+        top: 50%;
+        transform: translateY(-50%);
+        display: grid;
+        gap: 8px;
+        z-index: 10;
+      }
+
+      .nav a {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #9fa8a2;
+        text-indent: -999px;
+        overflow: hidden;
+      }
+
+      .kbd {
+        position: fixed;
+        left: 18px;
+        bottom: 18px;
+        color: var(--muted);
+        font-size: 12px;
+        background: rgb(255 255 255 / 78%);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 8px 10px;
+      }
+
+      @media (max-width: 920px) {
+        .slide {
+          grid-template-columns: 1fr;
+          gap: 28px;
+          padding: 54px 20px;
+        }
+
+        .visual {
+          min-height: auto;
+        }
+
+        .phone {
+          min-height: 560px;
+        }
+
+        .feature-grid,
+        .decision-grid,
+        .roadmap {
+          grid-template-columns: 1fr;
+        }
+
+        .nav,
+        .kbd {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="nav" aria-label="슬라이드 이동">
+      <a href="#slide-1">1</a>
+      <a href="#slide-2">2</a>
+      <a href="#slide-3">3</a>
+      <a href="#slide-4">4</a>
+      <a href="#slide-5">5</a>
+      <a href="#slide-6">6</a>
+      <a href="#slide-7">7</a>
+    </nav>
+    <main class="deck">
+      <section class="slide" id="slide-1">
+        <div>
+          <div class="eyebrow">AI Conversation Knowledge System</div>
+          <h1>LLM Wiki</h1>
+          <p class="lead">
+            AI와 나눈 대화를 프로젝트별로 저장하고, 태그와 검색으로 다시
+            활용하며, 마크다운으로 내보내는 로컬 우선 지식 관리 앱.
+          </p>
+          <div class="actions">
+            <a class="button primary" href="LLM_Wiki_Mobile_PRD.docx">PRD 보기</a>
+            <a class="button" href="adr/ADR-001.md">ADR 보기</a>
+            <a class="button" href="codex-obsidian-sync.md">Obsidian Sync</a>
+          </div>
+        </div>
+        <div class="visual" aria-label="앱 화면 미리보기">
+          <div class="phone">
+            <div class="phone-bar"></div>
+            <div class="app-title">
+              <span>LLM Wiki</span>
+              <span>□</span>
+            </div>
+            <div class="metric-grid">
+              <div class="metric"><strong>3</strong><span>Projects</span></div>
+              <div class="metric"><strong>12</strong><span>Chats</span></div>
+              <div class="metric"><strong>28</strong><span>Tags</span></div>
+              <div class="metric"><strong>7</strong><span>Code</span></div>
+            </div>
+            <div class="search">Search title, body, or tag</div>
+            <div class="mini-card">
+              <span>Mobile App</span>
+              <strong>SQLite 로컬 저장 구조</strong>
+              <div class="tag-row">
+                <span class="tag">#sqlite</span>
+                <span class="tag">#local-first</span>
+                <span class="tag">#security</span>
+              </div>
+            </div>
+            <div class="mini-card">
+              <span>Security</span>
+              <strong>API 키 보관 정책</strong>
+              <div class="tag-row">
+                <span class="tag">#byok</span>
+                <span class="tag">#keychain</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="slide" id="slide-2">
+        <div>
+          <div class="eyebrow">Problem</div>
+          <h2>AI 대화는 쌓이지만 지식으로 남지 않는다</h2>
+          <p>
+            사용자는 매일 AI와 문제 해결, 코드 작성, 학습, 기획을 진행한다.
+            하지만 대부분의 대화는 채팅창에 흩어져 있고, 나중에 다시 찾거나
+            프로젝트 문서로 재사용하기 어렵다.
+          </p>
+        </div>
+        <div class="quote">
+          “AI 대화를 단순 소비가 아니라 장기적으로 축적 가능한 개인 지식 자산으로 만든다.”
+        </div>
+      </section>
+
+      <section class="slide single" id="slide-3">
+        <div>
+          <div class="eyebrow">Core Features</div>
+          <h2>V1은 저장, 분류, 검색, 내보내기에 집중한다</h2>
+          <div class="feature-grid">
+            <div class="feature">
+              <b>AI 채팅 저장</b>
+              <span>대화와 메시지를 프로젝트 단위로 저장하고 다시 열람한다.</span>
+            </div>
+            <div class="feature">
+              <b>자동 태그 생성</b>
+              <span>본문 키워드를 기반으로 검색 가능한 태그를 생성한다.</span>
+            </div>
+            <div class="feature">
+              <b>코드 스니펫 추출</b>
+              <span>대화 속 코드 블록을 별도로 모아 재사용성을 높인다.</span>
+            </div>
+            <div class="feature">
+              <b>제목/본문/태그 검색</b>
+              <span>로컬 데이터에서 빠르게 필요한 대화를 찾는다.</span>
+            </div>
+            <div class="feature">
+              <b>마크다운 내보내기</b>
+              <span>Obsidian, Git, 문서 도구로 지식을 이동한다.</span>
+            </div>
+            <div class="feature">
+              <b>보안 설정</b>
+              <span>마스킹, 앱 잠금, 암호화 저장을 중심으로 설계한다.</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="slide single" id="slide-4">
+        <div>
+          <div class="eyebrow">Architecture Decisions</div>
+          <h2>핵심 결정은 사용자 통제권과 확장성을 기준으로 잡았다</h2>
+          <div class="decision-grid">
+            <div class="decision">
+              <b>로컬 우선 구조</b>
+              <span>대화 로그를 서버에 저장하지 않고 디바이스에 먼저 저장한다.</span>
+            </div>
+            <div class="decision">
+              <b>사용자 API 키 직접 사용</b>
+              <span>운영 비용과 서버 경유 위험을 줄이고 사용자 통제권을 높인다.</span>
+            </div>
+            <div class="decision">
+              <b>마크다운 내보내기</b>
+              <span>특정 앱에 묶이지 않고 장기 보관과 재가공이 가능하다.</span>
+            </div>
+            <div class="decision">
+              <b>플러터 채택</b>
+              <span>iOS, Android, Web, Desktop 확장을 하나의 코드베이스로 준비한다.</span>
+            </div>
+          </div>
+          <div class="actions" style="margin-top: 18px">
+            <a class="button" href="adr/ADR-001.md">로컬 우선 ADR</a>
+            <a class="button" href="adr/ADR-002.md">API 키 ADR</a>
+            <a class="button" href="adr/ADR-003.md">마크다운 ADR</a>
+            <a class="button" href="adr/ADR-004.md">플러터 ADR</a>
+          </div>
+        </div>
+      </section>
+
+      <section class="slide" id="slide-5">
+        <div>
+          <div class="eyebrow">Security Model</div>
+          <h2>보안은 기능이 아니라 제품 신뢰의 전제다</h2>
+          <p>
+            API 키 평문 저장 금지, 사용자 대화 로그 서버 저장 금지, Secure
+            Storage, SQLCipher, 민감정보 자동 마스킹, 앱 잠금, 향후 E2EE
+            동기화를 기본 설계 기준으로 둔다.
+          </p>
+          <div class="chips">
+            <span class="chip">Keychain / Keystore</span>
+            <span class="chip">SQLCipher</span>
+            <span class="chip">Local-first</span>
+            <span class="chip">E2EE-ready</span>
+          </div>
+        </div>
+        <div class="quote">
+          “사용자의 지식은 사용자의 기기에 먼저 저장된다.”
+        </div>
+      </section>
+
+      <section class="slide single" id="slide-6">
+        <div>
+          <div class="eyebrow">Roadmap</div>
+          <h2>저장과 검색에서 지식 그래프로 확장한다</h2>
+          <div class="roadmap">
+            <div class="roadmap-item">
+              <span class="number">1</span>
+              <b>V1 저장 및 검색</b>
+              <span>로컬 DB, 프로젝트 분류, 태그, 코드 추출, 마크다운 내보내기.</span>
+            </div>
+            <div class="roadmap-item">
+              <span class="number">2</span>
+              <b>V2 Obsidian Sync</b>
+              <span>Vault 동기화, provider 확장, 백업/복원 경험 강화.</span>
+            </div>
+            <div class="roadmap-item">
+              <span class="number">3</span>
+              <b>V3 AI Memory Graph</b>
+              <span>대화와 지식 노드의 관계를 연결해 장기 기억 시스템으로 확장.</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="slide" id="slide-7">
+        <div>
+          <div class="eyebrow">Closing</div>
+          <h2>LLM Wiki는 AI 사용 기록을 나의 지식 체계로 바꾼다</h2>
+          <p>
+            발표에서는 문제 정의, 핵심 기능, ADR 기반 기술 결정, 보안 설계,
+            로드맵 순서로 설명하고 마지막에 앱 데모를 보여준다.
+          </p>
+          <div class="actions">
+            <a class="button primary" href="LLM_Wiki_Mobile_PRD.docx">PRD 다운로드</a>
+            <a class="button" href="codex-obsidian-sync.md">Obsidian 문서</a>
+          </div>
+        </div>
+        <div class="visual">
+          <div class="quote">AI와의 대화를 다시 찾고, 연결하고, 오래 남기는 앱.</div>
+        </div>
+      </section>
+    </main>
+    <div class="kbd">키보드 ↑ ↓ 로 이동</div>
+    <script>
+      const slides = Array.from(document.querySelectorAll(".slide"));
+      document.addEventListener("keydown", (event) => {
+        if (!["ArrowDown", "ArrowUp", "PageDown", "PageUp"].includes(event.key)) {
+          return;
+        }
+        const current = Math.round(document.querySelector(".deck").scrollTop / window.innerHeight);
+        const next = event.key.includes("Up")
+          ? Math.max(0, current - 1)
+          : Math.min(slides.length - 1, current + 1);
+        slides[next].scrollIntoView({ behavior: "smooth" });
+      });
+    </script>
+  </body>
+</html>
