@@ -2,7 +2,7 @@
 
 Flutter implementation of the PRD for a local-first app that saves AI conversations as reusable personal knowledge.
 
-## Implemented V1 Flow
+## Implemented 첫 번째 개발 단계 Flow
 
 - Project-based conversation library
 - Title/body/tag search
@@ -20,7 +20,7 @@ Flutter implementation of the PRD for a local-first app that saves AI conversati
 - SQLite and SQLCipher: modeled as the next persistence boundary
 - Secure Storage: represented by the API key security flow
 - OpenAI SDK: represented by the capture flow, currently using a mock response
-- V2 Obsidian Sync and V3 AI Memory Graph: left as roadmap-ready extension points
+- 두 번째 개발 단계 Obsidian Sync and 세 번째 개발 단계 AI Memory Graph: left as roadmap-ready extension points
 
 ## Run
 
