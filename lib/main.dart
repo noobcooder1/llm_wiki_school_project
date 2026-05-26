@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter/services.dart';
 
 void main() {
@@ -18,6 +19,13 @@ class LlmWikiApp extends StatelessWidget {
     return MaterialApp(
       title: 'LLM Wiki',
       debugShowCheckedModeBanner: false,
+      locale: const Locale('ko'),
+      supportedLocales: const [Locale('ko'), Locale('en'), Locale('ja')],
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
       theme: ThemeData(
         colorScheme: colorScheme,
         useMaterial3: true,
@@ -51,6 +59,209 @@ class LlmWikiApp extends StatelessWidget {
 }
 
 enum AiRole { user, assistant }
+
+enum AppLanguage {
+  ko('ko', '한국어'),
+  en('en', 'English'),
+  ja('ja', '日本語');
+
+  const AppLanguage(this.code, this.label);
+
+  final String code;
+  final String label;
+}
+
+class AppText {
+  const AppText(this.language);
+
+  final AppLanguage language;
+
+  static AppText of(AppLanguage language) => AppText(language);
+
+  String pick({required String ko, required String en, required String ja}) {
+    return switch (language) {
+      AppLanguage.ko => ko,
+      AppLanguage.en => en,
+      AppLanguage.ja => ja,
+    };
+  }
+
+  String get copyMarkdownExport => pick(
+    ko: '마크다운 내보내기 복사',
+    en: 'Copy markdown export',
+    ja: 'Markdownエクスポートをコピー',
+  );
+  String get markdownCopied =>
+      pick(ko: '마크다운을 복사했습니다', en: 'Markdown copied', ja: 'Markdownをコピーしました');
+  String get library => pick(ko: '라이브러리', en: 'Library', ja: 'ライブラリ');
+  String get capture => pick(ko: '캡처', en: 'Capture', ja: '保存');
+  String get export => pick(ko: '내보내기', en: 'Export', ja: 'エクスポート');
+  String get settings => pick(ko: '설정', en: 'Settings', ja: '設定');
+  String get searchHint => pick(
+    ko: '제목, 본문, 태그 검색',
+    en: 'Search title, body, or tag',
+    ja: 'タイトル、本文、タグを検索',
+  );
+  String get clearSearch =>
+      pick(ko: '검색 지우기', en: 'Clear search', ja: '検索をクリア');
+  String get all => pick(ko: '전체', en: 'All', ja: 'すべて');
+  String savedConversationCount(int count) => pick(
+    ko: '저장된 대화 $count개',
+    en: '$count saved conversations',
+    ja: '保存された会話 $count件',
+  );
+  String get projects => pick(ko: '프로젝트', en: 'Projects', ja: 'プロジェクト');
+  String get chats => pick(ko: '대화', en: 'Chats', ja: '会話');
+  String get tags => pick(ko: '태그', en: 'Tags', ja: 'タグ');
+  String get code => pick(ko: '코드', en: 'Code', ja: 'コード');
+  String get addTag => pick(ko: '태그 추가', en: 'Add tag', ja: 'タグを追加');
+  String get extractedCode =>
+      pick(ko: '추출된 코드', en: 'Extracted code', ja: '抽出コード');
+  String get user => pick(ko: '사용자', en: 'User', ja: 'ユーザー');
+  String get assistant => pick(ko: 'AI', en: 'Assistant', ja: 'AI');
+  String get captureAiChat =>
+      pick(ko: 'AI 대화 캡처', en: 'Capture AI chat', ja: 'AI会話を保存');
+  String get captureDescription => pick(
+    ko: '프롬프트는 로컬에 저장되고, 자동으로 태그가 생성되며, 이후 OpenAI SDK 연동을 준비합니다.',
+    en: 'Prompts are saved locally, tagged automatically, and prepared for future OpenAI SDK integration.',
+    ja: 'プロンプトはローカルに保存され、自動でタグ付けされ、今後のOpenAI SDK連携に備えます。',
+  );
+  String get project => pick(ko: '프로젝트', en: 'Project', ja: 'プロジェクト');
+  String get promptLabel => pick(
+    ko: '프롬프트 또는 붙여넣은 AI 대화',
+    en: 'Prompt or pasted AI conversation',
+    ja: 'プロンプトまたは貼り付けたAI会話',
+  );
+  String get promptHint => pick(
+    ko: '대화, 코드 스니펫, 새 AI 프롬프트를 붙여넣으세요...',
+    en: 'Paste a conversation, code snippet, or new AI prompt...',
+    ja: '会話、コードスニペット、新しいAIプロンプトを貼り付けてください...',
+  );
+  String get askAndSave =>
+      pick(ko: '질문하고 저장', en: 'Ask and save', ja: '質問して保存');
+  String get recentCaptures =>
+      pick(ko: '최근 캡처', en: 'Recent captures', ja: '最近の保存');
+  String get enterPrompt => pick(
+    ko: '저장할 프롬프트를 입력하세요',
+    en: 'Enter a prompt before saving',
+    ja: '保存する前にプロンプトを入力してください',
+  );
+  String saved(String title) => pick(
+    ko: '"$title" 대화를 저장했습니다',
+    en: 'Saved "$title"',
+    ja: '「$title」を保存しました',
+  );
+  String get sensitiveMasking =>
+      pick(ko: '민감정보 마스킹', en: 'Sensitive masking', ja: '機密情報マスキング');
+  String get sqlCipherReady =>
+      pick(ko: 'SQLCipher 준비', en: 'SQLCipher-ready', ja: 'SQLCipher対応');
+  String get appLock => pick(ko: '앱 잠금', en: 'App lock', ja: 'アプリロック');
+  String onOff(bool value) => value
+      ? pick(ko: '켜짐', en: 'on', ja: 'オン')
+      : pick(ko: '꺼짐', en: 'off', ja: 'オフ');
+  String get markdownExport =>
+      pick(ko: '마크다운 내보내기', en: 'Markdown export', ja: 'Markdownエクスポート');
+  String get exportDescription => pick(
+    ko: '프로젝트 정보, 태그, 대화 턴, 코드 스니펫을 포함해 대화를 내보냅니다.',
+    en: 'Export conversations with project metadata, tags, turns, and code snippets.',
+    ja: 'プロジェクト情報、タグ、会話、コードスニペットを含めてエクスポートします。',
+  );
+  String get exportScope =>
+      pick(ko: '내보내기 범위', en: 'Export scope', ja: 'エクスポート範囲');
+  String get allProjects =>
+      pick(ko: '모든 프로젝트', en: 'All projects', ja: 'すべてのプロジェクト');
+  String get copyMarkdown =>
+      pick(ko: '마크다운 복사', en: 'Copy Markdown', ja: 'Markdownをコピー');
+  String get apiKey =>
+      pick(ko: 'OpenAI API 키', en: 'OpenAI API key', ja: 'OpenAI APIキー');
+  String get apiKeySaved => pick(
+    ko: '보안 저장소에 키가 저장됨',
+    en: 'Key saved in secure storage',
+    ja: 'キーは安全なストレージに保存済み',
+  );
+  String get saveApiKey =>
+      pick(ko: 'API 키 저장', en: 'Save API key', ja: 'APIキーを保存');
+  String get apiKeyMarked => pick(
+    ko: 'API 키를 보안 저장 대상으로 표시했습니다',
+    en: 'API key marked for secure storage',
+    ja: 'APIキーを安全な保存対象として設定しました',
+  );
+  String get enterKeyFirst =>
+      pick(ko: '먼저 키를 입력하세요', en: 'Enter a key first', ja: '先にキーを入力してください');
+  String get settingsTitle => pick(ko: '설정', en: 'Settings', ja: '設定');
+  String get settingsDescription => pick(
+    ko: '언어, API 키, 암호화 저장소, 앱 잠금, 마스킹을 관리합니다.',
+    en: 'Manage language, API keys, encrypted storage, app lock, and masking.',
+    ja: '言語、APIキー、暗号化ストレージ、アプリロック、マスキングを管理します。',
+  );
+  String get languageLabel => pick(ko: '언어', en: 'Language', ja: '言語');
+  String get languageDescription => pick(
+    ko: '앱 표시 언어를 변경합니다. 기본 언어는 한국어입니다.',
+    en: 'Change the app display language. Korean is the default.',
+    ja: 'アプリの表示言語を変更します。既定は韓国語です。',
+  );
+  String get maskSensitiveTitle => pick(
+    ko: '민감정보 자동 마스킹',
+    en: 'Mask sensitive information',
+    ja: '機密情報を自動マスキング',
+  );
+  String get maskSensitiveSubtitle => pick(
+    ko: '캡처 시 API 키, 이메일, 카드처럼 보이는 숫자를 가립니다.',
+    en: 'Redacts API keys, emails, and card-like numbers on capture.',
+    ja: '保存時にAPIキー、メール、カード番号らしき数字を伏せます。',
+  );
+  String get appLockTitle => pick(
+    ko: 'FaceID, 지문 또는 PIN 앱 잠금',
+    en: 'FaceID, fingerprint, or PIN app lock',
+    ja: 'FaceID、指紋、PINによるアプリロック',
+  );
+  String get appLockSubtitle => pick(
+    ko: '플랫폼 생체 인증 연동을 위한 설정입니다.',
+    en: 'UI-ready control for platform biometric integration.',
+    ja: 'プラットフォームの生体認証連携に向けた設定です。',
+  );
+  String get encryptedDbTitle => pick(
+    ko: '암호화된 로컬 데이터베이스',
+    en: 'Encrypted local database',
+    ja: '暗号化ローカルデータベース',
+  );
+  String get encryptedDbSubtitle => pick(
+    ko: 'SQLCipher 기반 SQLite 저장소를 전제로 설계합니다.',
+    en: 'Designed for SQLCipher-backed SQLite storage.',
+    ja: 'SQLCipherベースのSQLite保存を前提に設計します。',
+  );
+  String get e2eeTitle =>
+      pick(ko: 'E2EE 클라우드 동기화', en: 'E2EE cloud sync', ja: 'E2EEクラウド同期');
+  String get e2eeSubtitle => pick(
+    ko: '서버가 읽을 수 없는 프리미엄 동기화 기능을 위한 로드맵 설정입니다.',
+    en: 'Roadmap toggle for premium sync without server-readable logs.',
+    ja: 'サーバーが読めないプレミアム同期に向けたロードマップ設定です。',
+  );
+  String get implementationBoundary =>
+      pick(ko: '구현 경계', en: 'Implementation boundary', ja: '実装境界');
+  String get implementationBoundaryBody => pick(
+    ko: '운영 단계에서는 이 저장소를 conversations, messages, tags SQLite 테이블에 연결하고, provider 키는 Keychain 또는 Keystore에만 저장하며, 사용자 대화 로그는 제품 서버에 저장하지 않아야 합니다.',
+    en: 'Production storage should connect this repository to SQLite tables for conversations, messages, and tags; store provider keys only in Keychain or Keystore; and keep user chat logs off product servers.',
+    ja: '本番環境では、このリポジトリをconversations、messages、tagsのSQLiteテーブルに接続し、providerキーはKeychainまたはKeystoreにのみ保存し、ユーザー会話ログを製品サーバーに保存しないようにします。',
+  );
+  String get noKnowledge => pick(
+    ko: '일치하는 지식이 없습니다',
+    en: 'No matching knowledge yet',
+    ja: '一致する知識はまだありません',
+  );
+  String get noKnowledgeHint => pick(
+    ko: '다른 검색어를 입력하거나 새 AI 대화를 캡처해보세요.',
+    en: 'Try another search or capture a new AI conversation.',
+    ja: '別の検索語を試すか、新しいAI会話を保存してください。',
+  );
+
+  String projectName(String id, String fallback) => switch (id) {
+    'mobile' => pick(ko: '모바일 앱', en: 'Mobile App', ja: 'モバイルアプリ'),
+    'research' => pick(ko: '리서치', en: 'Research', ja: 'リサーチ'),
+    'security' => pick(ko: '보안', en: 'Security', ja: 'セキュリティ'),
+    _ => fallback,
+  };
+}
 
 class ProjectSpace {
   const ProjectSpace({
@@ -176,6 +387,7 @@ class SecuritySettings {
     required this.localDbEncryption,
     required this.e2eeCloudSync,
     required this.apiKeySaved,
+    this.language = AppLanguage.ko,
   });
 
   final bool maskSensitiveInfo;
@@ -183,6 +395,7 @@ class SecuritySettings {
   final bool localDbEncryption;
   final bool e2eeCloudSync;
   final bool apiKeySaved;
+  final AppLanguage language;
 
   SecuritySettings copyWith({
     bool? maskSensitiveInfo,
@@ -190,6 +403,7 @@ class SecuritySettings {
     bool? localDbEncryption,
     bool? e2eeCloudSync,
     bool? apiKeySaved,
+    AppLanguage? language,
   }) {
     return SecuritySettings(
       maskSensitiveInfo: maskSensitiveInfo ?? this.maskSensitiveInfo,
@@ -197,6 +411,7 @@ class SecuritySettings {
       localDbEncryption: localDbEncryption ?? this.localDbEncryption,
       e2eeCloudSync: e2eeCloudSync ?? this.e2eeCloudSync,
       apiKeySaved: apiKeySaved ?? this.apiKeySaved,
+      language: language ?? this.language,
     );
   }
 }
@@ -342,6 +557,7 @@ class WikiRepository extends ChangeNotifier {
   }
 
   String exportMarkdown({String projectId = 'all'}) {
+    final l = AppText.of(settings.language);
     final selected =
         conversations
             .where(
@@ -352,11 +568,15 @@ class WikiRepository extends ChangeNotifier {
           ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
 
     final buffer = StringBuffer()
-      ..writeln('# LLM Wiki Export')
-      ..writeln()
-      ..writeln('- Exported: ${_formatDateTime(DateTime.now())}')
       ..writeln(
-        '- Scope: ${projectId == 'all' ? 'All projects' : projectById(projectId).name}',
+        '# ${l.pick(ko: 'LLM Wiki 내보내기', en: 'LLM Wiki Export', ja: 'LLM Wikiエクスポート')}',
+      )
+      ..writeln()
+      ..writeln(
+        '- ${l.pick(ko: '내보낸 시간', en: 'Exported', ja: 'エクスポート日時')}: ${_formatDateTime(DateTime.now())}',
+      )
+      ..writeln(
+        '- ${l.pick(ko: '범위', en: 'Scope', ja: '範囲')}: ${projectId == 'all' ? l.allProjects : l.projectName(projectById(projectId).id, projectById(projectId).name)}',
       )
       ..writeln();
 
@@ -365,15 +585,17 @@ class WikiRepository extends ChangeNotifier {
       buffer
         ..writeln('## ${conversation.title}')
         ..writeln()
-        ..writeln('- Project: ${project.name}')
-        ..writeln('- Created: ${_formatDateTime(conversation.createdAt)}')
+        ..writeln('- ${l.project}: ${l.projectName(project.id, project.name)}')
         ..writeln(
-          '- Tags: ${conversation.tags.map((tag) => '#$tag').join(' ')}',
+          '- ${l.pick(ko: '생성일', en: 'Created', ja: '作成日')}: ${_formatDateTime(conversation.createdAt)}',
+        )
+        ..writeln(
+          '- ${l.tags}: ${conversation.tags.map((tag) => '#$tag').join(' ')}',
         )
         ..writeln();
 
       for (final message in conversation.messages) {
-        final speaker = message.role == AiRole.user ? 'User' : 'Assistant';
+        final speaker = message.role == AiRole.user ? l.user : l.assistant;
         buffer
           ..writeln('### $speaker')
           ..writeln()
@@ -383,7 +605,7 @@ class WikiRepository extends ChangeNotifier {
 
       if (conversation.codeSnippets.isNotEmpty) {
         buffer
-          ..writeln('### Code Snippets')
+          ..writeln('### ${l.extractedCode}')
           ..writeln();
         for (final snippet in conversation.codeSnippets) {
           buffer
@@ -420,7 +642,7 @@ class WikiRepository extends ChangeNotifier {
       Conversation(
         id: 'conv-seed-1',
         projectId: 'mobile',
-        title: 'SQLite schema for saved AI chats',
+        title: 'AI 대화 저장용 SQLite 스키마',
         createdAt: now.subtract(const Duration(days: 4, hours: 3)),
         updatedAt: now.subtract(const Duration(days: 4, hours: 2)),
         manualTags: const ['schema', 'local-first'],
@@ -429,22 +651,21 @@ class WikiRepository extends ChangeNotifier {
             id: 'msg-1',
             role: AiRole.user,
             createdAt: now.subtract(const Duration(days: 4, hours: 3)),
-            content:
-                'Design a local SQLite structure for conversations, messages, and tags.',
+            content: 'conversations, messages, tags를 위한 로컬 SQLite 구조를 설계해줘.',
           ),
           KnowledgeMessage(
             id: 'msg-2',
             role: AiRole.assistant,
             createdAt: now.subtract(const Duration(days: 4, hours: 2)),
             content:
-                'Use conversations for project-level records, messages for ordered chat turns, and tags as a many-to-many index. SQLCipher can encrypt the database file while Secure Storage keeps the passphrase outside SQLite.',
+                'conversations는 프로젝트 단위 대화 기록, messages는 순서가 있는 대화 턴, tags는 다대다 검색 인덱스로 분리하는 것이 좋습니다. SQLCipher로 DB 파일을 암호화하고, 암호화 키는 Secure Storage에 보관합니다.',
           ),
         ],
       ),
       Conversation(
         id: 'conv-seed-2',
         projectId: 'security',
-        title: 'API key handling checklist',
+        title: 'API 키 보관 체크리스트',
         createdAt: now.subtract(const Duration(days: 2, hours: 8)),
         updatedAt: now.subtract(const Duration(days: 2, hours: 7)),
         manualTags: const ['keychain', 'privacy'],
@@ -453,22 +674,21 @@ class WikiRepository extends ChangeNotifier {
             id: 'msg-3',
             role: AiRole.user,
             createdAt: now.subtract(const Duration(days: 2, hours: 8)),
-            content:
-                'What should the app do so user OpenAI API keys are not leaked?',
+            content: '사용자의 OpenAI API 키가 유출되지 않게 앱에서 무엇을 해야 할까?',
           ),
           KnowledgeMessage(
             id: 'msg-4',
             role: AiRole.assistant,
             createdAt: now.subtract(const Duration(days: 2, hours: 7)),
             content:
-                'Never send user API keys to a product server. Store keys in iOS Keychain or Android Keystore, enforce HTTPS/TLS for direct provider requests, and offer app lock plus sensitive information masking.',
+                '사용자 API 키를 제품 서버로 보내지 않아야 합니다. 키는 iOS Keychain 또는 Android Keystore에 저장하고, provider 직접 요청에는 HTTPS/TLS를 사용하며, 앱 잠금과 민감정보 마스킹 옵션을 제공합니다.',
           ),
         ],
       ),
       Conversation(
         id: 'conv-seed-3',
         projectId: 'research',
-        title: 'Markdown export shape',
+        title: '마크다운 내보내기 형식',
         createdAt: now.subtract(const Duration(hours: 20)),
         updatedAt: now.subtract(const Duration(hours: 18)),
         manualTags: const ['export', 'obsidian'],
@@ -477,14 +697,14 @@ class WikiRepository extends ChangeNotifier {
             id: 'msg-5',
             role: AiRole.user,
             createdAt: now.subtract(const Duration(hours: 20)),
-            content: 'Create a markdown template for exporting a chat.',
+            content: '대화를 내보내기 위한 마크다운 템플릿을 만들어줘.',
           ),
           KnowledgeMessage(
             id: 'msg-6',
             role: AiRole.assistant,
             createdAt: now.subtract(const Duration(hours: 18)),
             content:
-                'A useful export includes project, tags, created date, each role turn, and extracted code. Example:\n\n```markdown\n## Conversation title\n- Project: Research\n- Tags: #search #memory\n\n### User\nPrompt text\n```',
+                '유용한 내보내기에는 프로젝트, 태그, 생성일, 역할별 대화 턴, 추출된 코드가 포함되어야 합니다. 예시:\n\n```markdown\n## 대화 제목\n- 프로젝트: 리서치\n- 태그: #search #memory\n\n### 사용자\n프롬프트 내용\n```',
           ),
         ],
       ),
@@ -493,15 +713,36 @@ class WikiRepository extends ChangeNotifier {
 
   String _mockAssistantReply(String prompt) {
     final tags = _tagsFromPrompt(prompt);
-    final tagText = tags.isEmpty ? 'general knowledge' : tags.join(', ');
-    return [
-      'Saved this as reusable knowledge about $tagText.',
-      '',
-      'Suggested next actions:',
-      '- Keep the original prompt and response linked to the project.',
-      '- Review generated tags before exporting.',
-      '- Promote durable decisions into a wiki note when they become stable.',
-    ].join('\n');
+    final l = AppText.of(settings.language);
+    final tagText = tags.isEmpty
+        ? l.pick(ko: '일반 지식', en: 'general knowledge', ja: '一般知識')
+        : tags.join(', ');
+    return switch (settings.language) {
+      AppLanguage.ko => [
+        '$tagText 관련 재사용 가능한 지식으로 저장했습니다.',
+        '',
+        '다음 작업 제안:',
+        '- 원본 프롬프트와 응답을 프로젝트에 연결해두세요.',
+        '- 내보내기 전에 생성된 태그를 검토하세요.',
+        '- 안정화된 결정은 위키 노트로 승격하세요.',
+      ].join('\n'),
+      AppLanguage.en => [
+        'Saved this as reusable knowledge about $tagText.',
+        '',
+        'Suggested next actions:',
+        '- Keep the original prompt and response linked to the project.',
+        '- Review generated tags before exporting.',
+        '- Promote durable decisions into a wiki note when they become stable.',
+      ].join('\n'),
+      AppLanguage.ja => [
+        '$tagText に関する再利用可能な知識として保存しました。',
+        '',
+        '次のアクション:',
+        '- 元のプロンプトと応答をプロジェクトに紐づけてください。',
+        '- エクスポート前に生成されたタグを確認してください。',
+        '- 安定した決定事項はWikiノートへ昇格してください。',
+      ].join('\n'),
+    };
   }
 
   List<String> _tagsFromPrompt(String prompt) {
@@ -531,7 +772,9 @@ class WikiRepository extends ChangeNotifier {
   String _titleFromPrompt(String prompt) {
     final clean = prompt.replaceAll(RegExp(r'\s+'), ' ').trim();
     if (clean.isEmpty) {
-      return 'Untitled conversation';
+      return AppText.of(
+        settings.language,
+      ).pick(ko: '제목 없는 대화', en: 'Untitled conversation', ja: '無題の会話');
     }
     return clean.length > 54 ? '${clean.substring(0, 54)}...' : clean;
   }
@@ -560,12 +803,13 @@ class _WikiShellState extends State<WikiShell> {
     return AnimatedBuilder(
       animation: repository,
       builder: (context, _) {
+        final l = AppText.of(repository.settings.language);
         return Scaffold(
           appBar: AppBar(
             title: const Text('LLM Wiki'),
             actions: [
               IconButton(
-                tooltip: 'Copy markdown export',
+                tooltip: l.copyMarkdownExport,
                 onPressed: () async {
                   await Clipboard.setData(
                     ClipboardData(text: repository.exportMarkdown()),
@@ -573,9 +817,9 @@ class _WikiShellState extends State<WikiShell> {
                   if (!context.mounted) {
                     return;
                   }
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Markdown copied')),
-                  );
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text(l.markdownCopied)));
                 },
                 icon: const Icon(Icons.file_copy_outlined),
               ),
@@ -589,26 +833,26 @@ class _WikiShellState extends State<WikiShell> {
                 selectedIndex = index;
               });
             },
-            destinations: const [
+            destinations: [
               NavigationDestination(
-                icon: Icon(Icons.library_books_outlined),
-                selectedIcon: Icon(Icons.library_books),
-                label: 'Library',
+                icon: const Icon(Icons.library_books_outlined),
+                selectedIcon: const Icon(Icons.library_books),
+                label: l.library,
               ),
               NavigationDestination(
-                icon: Icon(Icons.add_comment_outlined),
-                selectedIcon: Icon(Icons.add_comment),
-                label: 'Capture',
+                icon: const Icon(Icons.add_comment_outlined),
+                selectedIcon: const Icon(Icons.add_comment),
+                label: l.capture,
               ),
               NavigationDestination(
-                icon: Icon(Icons.ios_share_outlined),
-                selectedIcon: Icon(Icons.ios_share),
-                label: 'Export',
+                icon: const Icon(Icons.ios_share_outlined),
+                selectedIcon: const Icon(Icons.ios_share),
+                label: l.export,
               ),
               NavigationDestination(
-                icon: Icon(Icons.lock_outline),
-                selectedIcon: Icon(Icons.lock),
-                label: 'Security',
+                icon: const Icon(Icons.settings_outlined),
+                selectedIcon: const Icon(Icons.settings),
+                label: l.settings,
               ),
             ],
           ),
@@ -640,6 +884,7 @@ class _LibraryPageState extends State<LibraryPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppText.of(widget.repository.settings.language);
     final conversations = widget.repository.search(
       query: searchController.text,
       projectId: selectedProjectId,
@@ -655,12 +900,12 @@ class _LibraryPageState extends State<LibraryPage> {
           key: const Key('library-search'),
           controller: searchController,
           leading: const Icon(Icons.search),
-          hintText: 'Search title, body, or tag',
+          hintText: l.searchHint,
           onChanged: (_) => setState(() {}),
           trailing: [
             if (searchController.text.isNotEmpty)
               IconButton(
-                tooltip: 'Clear search',
+                tooltip: l.clearSearch,
                 onPressed: () {
                   searchController.clear();
                   setState(() {});
@@ -672,6 +917,7 @@ class _LibraryPageState extends State<LibraryPage> {
         const SizedBox(height: 12),
         _ProjectFilter(
           projects: widget.repository.projects,
+          language: widget.repository.settings.language,
           selectedProjectId: selectedProjectId,
           onSelected: (projectId) {
             setState(() {
@@ -704,12 +950,12 @@ class _LibraryPageState extends State<LibraryPage> {
         ],
         const SizedBox(height: 16),
         Text(
-          '${conversations.length} saved conversations',
+          l.savedConversationCount(conversations.length),
           style: Theme.of(context).textTheme.titleMedium,
         ),
         const SizedBox(height: 8),
         if (conversations.isEmpty)
-          const _EmptyState()
+          _EmptyState(language: widget.repository.settings.language)
         else
           ...conversations.map(
             (conversation) => Padding(
@@ -717,6 +963,7 @@ class _LibraryPageState extends State<LibraryPage> {
               child: ConversationCard(
                 conversation: conversation,
                 project: widget.repository.projectById(conversation.projectId),
+                language: widget.repository.settings.language,
                 onTap: () => _openConversation(context, conversation),
               ),
             ),
@@ -734,6 +981,7 @@ class _LibraryPageState extends State<LibraryPage> {
         return ConversationDetailSheet(
           conversation: conversation,
           project: widget.repository.projectById(conversation.projectId),
+          language: widget.repository.settings.language,
           onAddTag: (tag) {
             widget.repository.addTag(conversation.id, tag);
             Navigator.pop(context);
@@ -751,23 +999,24 @@ class _MetricStrip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppText.of(repository.settings.language);
     final snippets = repository.conversations.fold<int>(
       0,
       (count, conversation) => count + conversation.codeSnippets.length,
     );
     final metrics = [
       (
-        'Projects',
+        l.projects,
         repository.projects.length.toString(),
         Icons.folder_outlined,
       ),
       (
-        'Chats',
+        l.chats,
         repository.conversations.length.toString(),
         Icons.forum_outlined,
       ),
-      ('Tags', repository.allTags.length.toString(), Icons.sell_outlined),
-      ('Code', snippets.toString(), Icons.code),
+      (l.tags, repository.allTags.length.toString(), Icons.sell_outlined),
+      (l.code, snippets.toString(), Icons.code),
     ];
 
     return Row(
@@ -806,16 +1055,19 @@ class _MetricStrip extends StatelessWidget {
 class _ProjectFilter extends StatelessWidget {
   const _ProjectFilter({
     required this.projects,
+    required this.language,
     required this.selectedProjectId,
     required this.onSelected,
   });
 
   final List<ProjectSpace> projects;
+  final AppLanguage language;
   final String selectedProjectId;
   final ValueChanged<String> onSelected;
 
   @override
   Widget build(BuildContext context) {
+    final l = AppText.of(language);
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
@@ -823,7 +1075,7 @@ class _ProjectFilter extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(right: 8),
             child: ChoiceChip(
-              label: const Text('All'),
+              label: Text(l.all),
               selected: selectedProjectId == 'all',
               onSelected: (_) => onSelected('all'),
             ),
@@ -833,7 +1085,7 @@ class _ProjectFilter extends StatelessWidget {
               padding: const EdgeInsets.only(right: 8),
               child: ChoiceChip(
                 avatar: CircleAvatar(backgroundColor: project.color),
-                label: Text(project.name),
+                label: Text(l.projectName(project.id, project.name)),
                 selected: selectedProjectId == project.id,
                 onSelected: (_) => onSelected(project.id),
               ),
@@ -850,15 +1102,18 @@ class ConversationCard extends StatelessWidget {
     super.key,
     required this.conversation,
     required this.project,
+    required this.language,
     required this.onTap,
   });
 
   final Conversation conversation;
   final ProjectSpace project;
+  final AppLanguage language;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
+    final l = AppText.of(language);
     return Card(
       child: InkWell(
         borderRadius: BorderRadius.circular(8),
@@ -881,7 +1136,7 @@ class ConversationCard extends StatelessWidget {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      project.name,
+                      l.projectName(project.id, project.name),
                       style: Theme.of(context).textTheme.labelLarge,
                     ),
                   ),
@@ -919,10 +1174,10 @@ class ConversationCard extends StatelessWidget {
                         ),
                       ),
                   if (conversation.codeSnippets.isNotEmpty)
-                    const Chip(
+                    Chip(
                       visualDensity: VisualDensity.compact,
-                      avatar: Icon(Icons.code, size: 16),
-                      label: Text('code'),
+                      avatar: const Icon(Icons.code, size: 16),
+                      label: Text(l.code.toLowerCase()),
                     ),
                 ],
               ),
@@ -939,11 +1194,13 @@ class ConversationDetailSheet extends StatefulWidget {
     super.key,
     required this.conversation,
     required this.project,
+    required this.language,
     required this.onAddTag,
   });
 
   final Conversation conversation;
   final ProjectSpace project;
+  final AppLanguage language;
   final ValueChanged<String> onAddTag;
 
   @override
@@ -962,6 +1219,7 @@ class _ConversationDetailSheetState extends State<ConversationDetailSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppText.of(widget.language);
     return DraggableScrollableSheet(
       expand: false,
       initialChildSize: 0.86,
@@ -981,7 +1239,7 @@ class _ConversationDetailSheetState extends State<ConversationDetailSheet> {
               children: [
                 Icon(Icons.folder_outlined, color: widget.project.color),
                 const SizedBox(width: 8),
-                Text(widget.project.name),
+                Text(l.projectName(widget.project.id, widget.project.name)),
                 const Spacer(),
                 Text(_formatDateTime(widget.conversation.createdAt)),
               ],
@@ -1000,16 +1258,16 @@ class _ConversationDetailSheetState extends State<ConversationDetailSheet> {
                 Expanded(
                   child: TextField(
                     controller: tagController,
-                    decoration: const InputDecoration(
-                      hintText: 'Add tag',
-                      prefixIcon: Icon(Icons.sell_outlined),
+                    decoration: InputDecoration(
+                      hintText: l.addTag,
+                      prefixIcon: const Icon(Icons.sell_outlined),
                     ),
                     onSubmitted: widget.onAddTag,
                   ),
                 ),
                 const SizedBox(width: 8),
                 IconButton.filled(
-                  tooltip: 'Add tag',
+                  tooltip: l.addTag,
                   onPressed: () => widget.onAddTag(tagController.text),
                   icon: const Icon(Icons.add),
                 ),
@@ -1017,12 +1275,13 @@ class _ConversationDetailSheetState extends State<ConversationDetailSheet> {
             ),
             const SizedBox(height: 16),
             ...widget.conversation.messages.map(
-              (message) => _MessageBubble(message: message),
+              (message) =>
+                  _MessageBubble(message: message, language: widget.language),
             ),
             if (widget.conversation.codeSnippets.isNotEmpty) ...[
               const SizedBox(height: 16),
               Text(
-                'Extracted code',
+                l.extractedCode,
                 style: Theme.of(context).textTheme.titleMedium,
               ),
               const SizedBox(height: 8),
@@ -1053,13 +1312,15 @@ class _ConversationDetailSheetState extends State<ConversationDetailSheet> {
 }
 
 class _MessageBubble extends StatelessWidget {
-  const _MessageBubble({required this.message});
+  const _MessageBubble({required this.message, required this.language});
 
   final KnowledgeMessage message;
+  final AppLanguage language;
 
   @override
   Widget build(BuildContext context) {
     final isUser = message.role == AiRole.user;
+    final l = AppText.of(language);
     return Align(
       alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
@@ -1075,7 +1336,7 @@ class _MessageBubble extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              isUser ? 'User' : 'Assistant',
+              isUser ? l.user : l.assistant,
               style: Theme.of(context).textTheme.labelLarge,
             ),
             const SizedBox(height: 6),
@@ -1108,20 +1369,21 @@ class _ChatCapturePageState extends State<ChatCapturePage> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppText.of(widget.repository.settings.language);
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
       children: [
-        Text('Capture AI chat', style: Theme.of(context).textTheme.titleLarge),
+        Text(l.captureAiChat, style: Theme.of(context).textTheme.titleLarge),
         const SizedBox(height: 8),
         Text(
-          'Prompts are saved locally, tagged automatically, and prepared for future OpenAI SDK integration.',
+          l.captureDescription,
           style: Theme.of(context).textTheme.bodyMedium,
         ),
         const SizedBox(height: 16),
         DropdownMenu<String>(
           width: double.infinity,
           initialSelection: projectId,
-          label: const Text('Project'),
+          label: Text(l.project),
           leadingIcon: const Icon(Icons.folder_outlined),
           onSelected: (value) {
             if (value != null) {
@@ -1134,7 +1396,7 @@ class _ChatCapturePageState extends State<ChatCapturePage> {
               .map(
                 (project) => DropdownMenuEntry<String>(
                   value: project.id,
-                  label: project.name,
+                  label: l.projectName(project.id, project.name),
                 ),
               )
               .toList(),
@@ -1146,11 +1408,11 @@ class _ChatCapturePageState extends State<ChatCapturePage> {
           minLines: 8,
           maxLines: 14,
           textInputAction: TextInputAction.newline,
-          decoration: const InputDecoration(
+          decoration: InputDecoration(
             alignLabelWithHint: true,
-            labelText: 'Prompt or pasted AI conversation',
-            hintText: 'Paste a conversation, code snippet, or new AI prompt...',
-            prefixIcon: Padding(
+            labelText: l.promptLabel,
+            hintText: l.promptHint,
+            prefixIcon: const Padding(
               padding: EdgeInsets.only(bottom: 138),
               child: Icon(Icons.chat_bubble_outline),
             ),
@@ -1163,10 +1425,10 @@ class _ChatCapturePageState extends State<ChatCapturePage> {
           key: const Key('ask-save-button'),
           onPressed: _savePrompt,
           icon: const Icon(Icons.auto_awesome),
-          label: const Text('Ask and save'),
+          label: Text(l.askAndSave),
         ),
         const SizedBox(height: 16),
-        Text('Recent captures', style: Theme.of(context).textTheme.titleMedium),
+        Text(l.recentCaptures, style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 8),
         ...widget.repository.conversations
             .take(3)
@@ -1178,6 +1440,7 @@ class _ChatCapturePageState extends State<ChatCapturePage> {
                   project: widget.repository.projectById(
                     conversation.projectId,
                   ),
+                  language: widget.repository.settings.language,
                   onTap: () {},
                 ),
               ),
@@ -1189,9 +1452,10 @@ class _ChatCapturePageState extends State<ChatCapturePage> {
   void _savePrompt() {
     final prompt = promptController.text.trim();
     if (prompt.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Enter a prompt before saving')),
-      );
+      final l = AppText.of(widget.repository.settings.language);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l.enterPrompt)));
       return;
     }
     final conversation = widget.repository.createConversation(
@@ -1199,9 +1463,10 @@ class _ChatCapturePageState extends State<ChatCapturePage> {
       prompt: prompt,
     );
     promptController.clear();
+    final l = AppText.of(widget.repository.settings.language);
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(SnackBar(content: Text('Saved "${conversation.title}"')));
+    ).showSnackBar(SnackBar(content: Text(l.saved(conversation.title))));
     setState(() {});
   }
 }
@@ -1213,14 +1478,15 @@ class _SecurityNotice extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppText.of(settings.language);
     final items = [
       (
         settings.maskSensitiveInfo,
-        'Sensitive masking',
+        l.sensitiveMasking,
         Icons.visibility_off_outlined,
       ),
-      (settings.localDbEncryption, 'SQLCipher-ready', Icons.storage_outlined),
-      (settings.appLockEnabled, 'App lock', Icons.lock_outline),
+      (settings.localDbEncryption, l.sqlCipherReady, Icons.storage_outlined),
+      (settings.appLockEnabled, l.appLock, Icons.lock_outline),
     ];
 
     return Card(
@@ -1232,7 +1498,7 @@ class _SecurityNotice extends StatelessWidget {
           children: items.map((item) {
             return Chip(
               avatar: Icon(item.$3, size: 16),
-              label: Text('${item.$2}: ${item.$1 ? 'on' : 'off'}'),
+              label: Text('${item.$2}: ${l.onOff(item.$1)}'),
             );
           }).toList(),
         ),
@@ -1255,22 +1521,23 @@ class _ExportPageState extends State<ExportPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppText.of(widget.repository.settings.language);
     final markdown = widget.repository.exportMarkdown(projectId: projectId);
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
       children: [
-        Text('Markdown export', style: Theme.of(context).textTheme.titleLarge),
+        Text(l.markdownExport, style: Theme.of(context).textTheme.titleLarge),
         const SizedBox(height: 8),
         Text(
-          'Export conversations with project metadata, tags, turns, and code snippets.',
+          l.exportDescription,
           style: Theme.of(context).textTheme.bodyMedium,
         ),
         const SizedBox(height: 16),
         DropdownMenu<String>(
           width: double.infinity,
           initialSelection: projectId,
-          label: const Text('Export scope'),
+          label: Text(l.exportScope),
           leadingIcon: const Icon(Icons.filter_alt_outlined),
           onSelected: (value) {
             if (value != null) {
@@ -1280,11 +1547,11 @@ class _ExportPageState extends State<ExportPage> {
             }
           },
           dropdownMenuEntries: [
-            const DropdownMenuEntry(value: 'all', label: 'All projects'),
+            DropdownMenuEntry(value: 'all', label: l.allProjects),
             ...widget.repository.projects.map(
               (project) => DropdownMenuEntry<String>(
                 value: project.id,
-                label: project.name,
+                label: l.projectName(project.id, project.name),
               ),
             ),
           ],
@@ -1298,10 +1565,10 @@ class _ExportPageState extends State<ExportPage> {
             }
             ScaffoldMessenger.of(
               context,
-            ).showSnackBar(const SnackBar(content: Text('Markdown copied')));
+            ).showSnackBar(SnackBar(content: Text(l.markdownCopied)));
           },
           icon: const Icon(Icons.copy),
-          label: const Text('Copy Markdown'),
+          label: Text(l.copyMarkdown),
         ),
         const SizedBox(height: 16),
         Container(
@@ -1346,28 +1613,84 @@ class _SecurityPageState extends State<SecurityPage> {
   @override
   Widget build(BuildContext context) {
     final settings = widget.repository.settings;
+    final l = AppText.of(settings.language);
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
       children: [
-        Text('Security', style: Theme.of(context).textTheme.titleLarge),
+        Text(l.settingsTitle, style: Theme.of(context).textTheme.titleLarge),
         const SizedBox(height: 8),
         Text(
-          'Local-first controls for API keys, encrypted storage, app lock, and masking.',
+          l.settingsDescription,
           style: Theme.of(context).textTheme.bodyMedium,
+        ),
+        const SizedBox(height: 16),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.language),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            l.languageLabel,
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            l.languageDescription,
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                DropdownMenu<AppLanguage>(
+                  key: const Key('language-menu'),
+                  width: double.infinity,
+                  initialSelection: settings.language,
+                  label: Text(l.languageLabel),
+                  onSelected: (language) {
+                    if (language == null) {
+                      return;
+                    }
+                    widget.repository.updateSettings(
+                      settings.copyWith(language: language),
+                    );
+                    setState(() {});
+                  },
+                  dropdownMenuEntries: AppLanguage.values
+                      .map(
+                        (language) => DropdownMenuEntry<AppLanguage>(
+                          value: language,
+                          label: language.label,
+                        ),
+                      )
+                      .toList(),
+                ),
+              ],
+            ),
+          ),
         ),
         const SizedBox(height: 16),
         TextField(
           controller: apiKeyController,
           obscureText: true,
           decoration: InputDecoration(
-            labelText: 'OpenAI API key',
-            hintText: settings.apiKeySaved
-                ? 'Key saved in secure storage'
-                : 'sk-...',
+            labelText: l.apiKey,
+            hintText: settings.apiKeySaved ? l.apiKeySaved : 'sk-...',
             prefixIcon: const Icon(Icons.key_outlined),
             suffixIcon: IconButton(
-              tooltip: 'Save API key',
+              tooltip: l.saveApiKey,
               onPressed: () {
                 final hasKey = apiKeyController.text.trim().isNotEmpty;
                 widget.repository.updateSettings(
@@ -1376,11 +1699,7 @@ class _SecurityPageState extends State<SecurityPage> {
                 apiKeyController.clear();
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text(
-                      hasKey
-                          ? 'API key marked for secure storage'
-                          : 'Enter a key first',
-                    ),
+                    content: Text(hasKey ? l.apiKeyMarked : l.enterKeyFirst),
                   ),
                 );
                 setState(() {});
@@ -1391,9 +1710,8 @@ class _SecurityPageState extends State<SecurityPage> {
         ),
         const SizedBox(height: 16),
         _SecuritySwitch(
-          title: 'Mask sensitive information',
-          subtitle:
-              'Redacts API keys, emails, and card-like numbers on capture.',
+          title: l.maskSensitiveTitle,
+          subtitle: l.maskSensitiveSubtitle,
           value: settings.maskSensitiveInfo,
           icon: Icons.visibility_off_outlined,
           onChanged: (value) {
@@ -1404,8 +1722,8 @@ class _SecurityPageState extends State<SecurityPage> {
           },
         ),
         _SecuritySwitch(
-          title: 'FaceID, fingerprint, or PIN app lock',
-          subtitle: 'UI-ready control for platform biometric integration.',
+          title: l.appLockTitle,
+          subtitle: l.appLockSubtitle,
           value: settings.appLockEnabled,
           icon: Icons.fingerprint,
           onChanged: (value) {
@@ -1416,8 +1734,8 @@ class _SecurityPageState extends State<SecurityPage> {
           },
         ),
         _SecuritySwitch(
-          title: 'Encrypted local database',
-          subtitle: 'Designed for SQLCipher-backed SQLite storage.',
+          title: l.encryptedDbTitle,
+          subtitle: l.encryptedDbSubtitle,
           value: settings.localDbEncryption,
           icon: Icons.enhanced_encryption_outlined,
           onChanged: (value) {
@@ -1428,9 +1746,8 @@ class _SecurityPageState extends State<SecurityPage> {
           },
         ),
         _SecuritySwitch(
-          title: 'E2EE cloud sync',
-          subtitle:
-              'Roadmap toggle for premium sync without server-readable logs.',
+          title: l.e2eeTitle,
+          subtitle: l.e2eeSubtitle,
           value: settings.e2eeCloudSync,
           icon: Icons.cloud_sync_outlined,
           onChanged: (value) {
@@ -1448,13 +1765,11 @@ class _SecurityPageState extends State<SecurityPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Implementation boundary',
+                  l.implementationBoundary,
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
                 const SizedBox(height: 8),
-                const Text(
-                  'Production storage should connect this repository to SQLite tables for conversations, messages, and tags; store provider keys only in Keychain or Keystore; and keep user chat logs off product servers.',
-                ),
+                Text(l.implementationBoundaryBody),
               ],
             ),
           ),
@@ -1494,10 +1809,13 @@ class _SecuritySwitch extends StatelessWidget {
 }
 
 class _EmptyState extends StatelessWidget {
-  const _EmptyState();
+  const _EmptyState({required this.language});
+
+  final AppLanguage language;
 
   @override
   Widget build(BuildContext context) {
+    final l = AppText.of(language);
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -1509,15 +1827,9 @@ class _EmptyState extends StatelessWidget {
               color: Theme.of(context).colorScheme.primary,
             ),
             const SizedBox(height: 8),
-            Text(
-              'No matching knowledge yet',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
+            Text(l.noKnowledge, style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 4),
-            const Text(
-              'Try another search or capture a new AI conversation.',
-              textAlign: TextAlign.center,
-            ),
+            Text(l.noKnowledgeHint, textAlign: TextAlign.center),
           ],
         ),
       ),

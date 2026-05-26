@@ -17,8 +17,8 @@ void main() {
     await tester.enterText(find.byKey(const Key('library-search')), 'keychain');
     await tester.pumpAndSettle();
 
-    expect(find.text('API key handling checklist'), findsOneWidget);
-    expect(find.text('SQLite schema for saved AI chats'), findsNothing);
+    expect(find.text('API 키 보관 체크리스트'), findsOneWidget);
+    expect(find.text('AI 대화 저장용 SQLite 스키마'), findsNothing);
     await tester.binding.setSurfaceSize(null);
   });
 
@@ -28,7 +28,7 @@ void main() {
     await tester.binding.setSurfaceSize(const Size(430, 1100));
     await tester.pumpWidget(const LlmWikiApp());
 
-    await tester.tap(find.text('Capture'));
+    await tester.tap(find.text('캡처'));
     await tester.pumpAndSettle();
 
     await tester.enterText(
@@ -38,13 +38,33 @@ void main() {
     await tester.tap(find.byKey(const Key('ask-save-button')));
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('Saved'), findsWidgets);
+    expect(find.textContaining('저장했습니다'), findsWidgets);
 
-    await tester.tap(find.text('Library'));
+    await tester.tap(find.text('라이브러리'));
     await tester.pumpAndSettle();
 
     expect(find.textContaining('[masked]'), findsWidgets);
     expect(find.textContaining('sk-testsecret'), findsNothing);
+    await tester.binding.setSurfaceSize(null);
+  });
+
+  testWidgets('settings can switch display language to English', (
+    WidgetTester tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(430, 1100));
+    await tester.pumpWidget(const LlmWikiApp());
+
+    expect(find.text('라이브러리'), findsOneWidget);
+
+    await tester.tap(find.text('설정'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('language-menu')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('English').last);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Settings'), findsWidgets);
+    expect(find.text('Library'), findsOneWidget);
     await tester.binding.setSurfaceSize(null);
   });
 }
