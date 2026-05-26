@@ -1,9 +1,28 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:llm_wiki_mobile/main.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  const secureStorageChannel = MethodChannel(
+    'plugins.it_nomads.com/flutter_secure_storage',
+  );
+
+  setUp(() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(secureStorageChannel, (call) async {
+          return switch (call.method) {
+            'read' => null,
+            'write' => null,
+            'delete' => null,
+            'containsKey' => false,
+            'readAll' => <String, String>{},
+            'deleteAll' => null,
+            _ => null,
+          };
+        });
+  });
 
   testWidgets('library shows saved knowledge and search works', (
     WidgetTester tester,
@@ -38,7 +57,7 @@ void main() {
     await tester.tap(find.byKey(const Key('ask-save-button')));
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('저장했습니다'), findsWidgets);
+    expect(find.textContaining('API 키가 없어'), findsWidgets);
 
     await tester.tap(find.text('라이브러리'));
     await tester.pumpAndSettle();

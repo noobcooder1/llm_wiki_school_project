@@ -1,6 +1,10 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http;
 
 void main() {
   runApp(const LlmWikiApp());
@@ -122,9 +126,9 @@ class AppText {
   String get captureAiChat =>
       pick(ko: 'AI 대화 캡처', en: 'Capture AI chat', ja: 'AI会話を保存');
   String get captureDescription => pick(
-    ko: '프롬프트는 로컬에 저장되고, 자동으로 태그가 생성되며, 이후 OpenAI SDK 연동을 준비합니다.',
-    en: 'Prompts are saved locally, tagged automatically, and prepared for future OpenAI SDK integration.',
-    ja: 'プロンプトはローカルに保存され、自動でタグ付けされ、今後のOpenAI SDK連携に備えます。',
+    ko: '저장된 OpenAI API 키로 답변을 생성하고, 프롬프트와 응답을 함께 로컬에 저장합니다.',
+    en: 'Uses the saved OpenAI API key to generate an answer and stores both prompt and response locally.',
+    ja: '保存済みのOpenAI APIキーで回答を生成し、プロンプトと応答をローカルに保存します。',
   );
   String get project => pick(ko: '프로젝트', en: 'Project', ja: 'プロジェクト');
   String get promptLabel => pick(
@@ -139,6 +143,8 @@ class AppText {
   );
   String get askAndSave =>
       pick(ko: '질문하고 저장', en: 'Ask and save', ja: '質問して保存');
+  String get askingAndSaving =>
+      pick(ko: '답변 생성 중...', en: 'Asking...', ja: '回答を生成中...');
   String get recentCaptures =>
       pick(ko: '최근 캡처', en: 'Recent captures', ja: '最近の保存');
   String get enterPrompt => pick(
@@ -150,6 +156,26 @@ class AppText {
     ko: '"$title" 대화를 저장했습니다',
     en: 'Saved "$title"',
     ja: '「$title」を保存しました',
+  );
+  String get missingApiKeyAssistant => pick(
+    ko: 'OpenAI API 키가 아직 저장되어 있지 않아 실제 답변을 생성하지 못했습니다. 설정 화면에서 API 키를 저장한 뒤 다시 질문하면 AI 답변과 함께 대화가 저장됩니다.',
+    en: 'No OpenAI API key is saved yet, so I could not generate a real answer. Save your API key in Settings, then ask again to store the AI response with the conversation.',
+    ja: 'OpenAI APIキーがまだ保存されていないため、実際の回答を生成できませんでした。設定画面でAPIキーを保存してから再度質問すると、AI応答と一緒に会話が保存されます。',
+  );
+  String aiErrorAssistant(String detail) => pick(
+    ko: 'AI 답변 생성에 실패했습니다. 프롬프트는 저장했지만 응답은 가져오지 못했습니다.\n\n오류: $detail',
+    en: 'Failed to generate the AI answer. The prompt was saved, but the response could not be fetched.\n\nError: $detail',
+    ja: 'AI回答の生成に失敗しました。プロンプトは保存しましたが、応答を取得できませんでした。\n\nエラー: $detail',
+  );
+  String get savedWithMissingKey => pick(
+    ko: 'API 키가 없어 안내 메시지와 함께 저장했습니다',
+    en: 'Saved with API key guidance',
+    ja: 'APIキー案内と一緒に保存しました',
+  );
+  String get savedWithAiError => pick(
+    ko: 'AI 응답 오류 내용을 함께 저장했습니다',
+    en: 'Saved with the AI response error',
+    ja: 'AI応答エラーと一緒に保存しました',
   );
   String get sensitiveMasking =>
       pick(ko: '민감정보 마스킹', en: 'Sensitive masking', ja: '機密情報マスキング');
@@ -289,6 +315,94 @@ class KnowledgeMessage {
   final AiRole role;
   final String content;
   final DateTime createdAt;
+}
+
+enum CaptureSaveResult { answered, missingApiKey, apiError }
+
+class CaptureResult {
+  const CaptureResult({required this.conversation, required this.result});
+
+  final Conversation conversation;
+  final CaptureSaveResult result;
+}
+
+class OpenAiClient {
+  OpenAiClient({http.Client? httpClient})
+    : _httpClient = httpClient ?? http.Client();
+
+  final http.Client _httpClient;
+
+  Future<String> generateAnswer({
+    required String apiKey,
+    required String prompt,
+    required AppLanguage language,
+  }) async {
+    final l = AppText.of(language);
+    final response = await _httpClient.post(
+      Uri.parse('https://api.openai.com/v1/responses'),
+      headers: {
+        'Authorization': 'Bearer $apiKey',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'model': 'gpt-4.1-mini',
+        'instructions': l.pick(
+          ko: '너는 LLM Wiki 앱 안에서 사용자의 AI 대화를 지식으로 정리하는 도우미야. 한국어로 자연스럽고 실용적으로 답변해. 필요한 경우 핵심 요약과 다음 행동을 짧게 제안해.',
+          en: 'You are an assistant inside LLM Wiki that helps turn AI conversations into reusable knowledge. Answer naturally and practically in English. When useful, include a short summary and next actions.',
+          ja: 'あなたはLLM Wikiアプリ内で、AI会話を再利用可能な知識に整理するアシスタントです。日本語で自然かつ実用的に答えてください。必要に応じて短い要約と次の行動を提案してください。',
+        ),
+        'input': prompt,
+      }),
+    );
+
+    final decoded = jsonDecode(utf8.decode(response.bodyBytes));
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      final message = decoded is Map<String, dynamic>
+          ? decoded['error'] is Map<String, dynamic>
+                ? decoded['error']['message']?.toString()
+                : decoded['error']?.toString()
+          : null;
+      throw Exception(message ?? 'OpenAI API ${response.statusCode}');
+    }
+
+    final outputText = _extractOutputText(decoded);
+    if (outputText == null || outputText.trim().isEmpty) {
+      throw Exception('OpenAI response did not include output text.');
+    }
+    return outputText.trim();
+  }
+
+  String? _extractOutputText(dynamic decoded) {
+    if (decoded is! Map<String, dynamic>) {
+      return null;
+    }
+    final direct = decoded['output_text'];
+    if (direct is String && direct.trim().isNotEmpty) {
+      return direct;
+    }
+
+    final chunks = <String>[];
+    final output = decoded['output'];
+    if (output is List) {
+      for (final item in output) {
+        if (item is! Map<String, dynamic>) {
+          continue;
+        }
+        final content = item['content'];
+        if (content is List) {
+          for (final part in content) {
+            if (part is Map<String, dynamic>) {
+              final text = part['text'];
+              if (text is String && text.trim().isNotEmpty) {
+                chunks.add(text);
+              }
+            }
+          }
+        }
+      }
+    }
+    return chunks.isEmpty ? null : chunks.join('\n');
+  }
 }
 
 class Conversation {
@@ -448,6 +562,10 @@ class WikiRepository extends ChangeNotifier {
     conversations = _seedConversations();
   }
 
+  static const _apiKeyStorageKey = 'openai_api_key';
+  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
+  final OpenAiClient _openAiClient = OpenAiClient();
+
   final List<ProjectSpace> projects;
   late List<Conversation> conversations;
   SecuritySettings settings;
@@ -499,16 +617,72 @@ class WikiRepository extends ChangeNotifier {
       ..sort();
   }
 
-  Conversation createConversation({
+  Future<void> loadSecureState() async {
+    try {
+      final apiKey = await _secureStorage.read(key: _apiKeyStorageKey);
+      final hasApiKey = apiKey != null && apiKey.trim().isNotEmpty;
+      if (hasApiKey != settings.apiKeySaved) {
+        settings = settings.copyWith(apiKeySaved: hasApiKey);
+        notifyListeners();
+      }
+    } on MissingPluginException {
+      return;
+    } catch (_) {
+      return;
+    }
+  }
+
+  Future<bool> saveApiKey(String apiKey) async {
+    final trimmed = apiKey.trim();
+    if (trimmed.isEmpty) {
+      return false;
+    }
+    await _secureStorage.write(key: _apiKeyStorageKey, value: trimmed);
+    settings = settings.copyWith(apiKeySaved: true);
+    notifyListeners();
+    return true;
+  }
+
+  Future<String?> _readApiKey() async {
+    try {
+      final apiKey = await _secureStorage.read(key: _apiKeyStorageKey);
+      if (apiKey == null || apiKey.trim().isEmpty) {
+        return null;
+      }
+      return apiKey.trim();
+    } on MissingPluginException {
+      return null;
+    }
+  }
+
+  Future<CaptureResult> createConversation({
     required String projectId,
     required String prompt,
-  }) {
+  }) async {
     final sanitizedPrompt = settings.maskSensitiveInfo
         ? maskSensitive(prompt)
         : prompt.trim();
     final now = DateTime.now();
     final title = _titleFromPrompt(sanitizedPrompt);
-    final assistantReply = _mockAssistantReply(sanitizedPrompt);
+    final l = AppText.of(settings.language);
+    CaptureSaveResult result = CaptureSaveResult.answered;
+    var assistantReply = '';
+    final apiKey = await _readApiKey();
+    if (apiKey == null) {
+      result = CaptureSaveResult.missingApiKey;
+      assistantReply = l.missingApiKeyAssistant;
+    } else {
+      try {
+        assistantReply = await _openAiClient.generateAnswer(
+          apiKey: apiKey,
+          prompt: sanitizedPrompt,
+          language: settings.language,
+        );
+      } catch (error) {
+        result = CaptureSaveResult.apiError;
+        assistantReply = l.aiErrorAssistant(_readableError(error));
+      }
+    }
     final conversation = Conversation(
       id: 'conv-${now.microsecondsSinceEpoch}',
       projectId: projectId,
@@ -533,7 +707,12 @@ class WikiRepository extends ChangeNotifier {
     );
     conversations = [conversation, ...conversations];
     notifyListeners();
-    return conversation;
+    return CaptureResult(conversation: conversation, result: result);
+  }
+
+  String _readableError(Object error) {
+    final text = error.toString();
+    return text.startsWith('Exception: ') ? text.substring(11) : text;
   }
 
   void addTag(String conversationId, String tag) {
@@ -711,40 +890,6 @@ class WikiRepository extends ChangeNotifier {
     ];
   }
 
-  String _mockAssistantReply(String prompt) {
-    final tags = _tagsFromPrompt(prompt);
-    final l = AppText.of(settings.language);
-    final tagText = tags.isEmpty
-        ? l.pick(ko: '일반 지식', en: 'general knowledge', ja: '一般知識')
-        : tags.join(', ');
-    return switch (settings.language) {
-      AppLanguage.ko => [
-        '$tagText 관련 재사용 가능한 지식으로 저장했습니다.',
-        '',
-        '다음 작업 제안:',
-        '- 원본 프롬프트와 응답을 프로젝트에 연결해두세요.',
-        '- 내보내기 전에 생성된 태그를 검토하세요.',
-        '- 안정화된 결정은 위키 노트로 승격하세요.',
-      ].join('\n'),
-      AppLanguage.en => [
-        'Saved this as reusable knowledge about $tagText.',
-        '',
-        'Suggested next actions:',
-        '- Keep the original prompt and response linked to the project.',
-        '- Review generated tags before exporting.',
-        '- Promote durable decisions into a wiki note when they become stable.',
-      ].join('\n'),
-      AppLanguage.ja => [
-        '$tagText に関する再利用可能な知識として保存しました。',
-        '',
-        '次のアクション:',
-        '- 元のプロンプトと応答をプロジェクトに紐づけてください。',
-        '- エクスポート前に生成されたタグを確認してください。',
-        '- 安定した決定事項はWikiノートへ昇格してください。',
-      ].join('\n'),
-    };
-  }
-
   List<String> _tagsFromPrompt(String prompt) {
     final lower = prompt.toLowerCase();
     final tags = <String>{};
@@ -790,6 +935,12 @@ class WikiShell extends StatefulWidget {
 class _WikiShellState extends State<WikiShell> {
   final WikiRepository repository = WikiRepository();
   int selectedIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    repository.loadSecureState();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1360,6 +1511,7 @@ class ChatCapturePage extends StatefulWidget {
 class _ChatCapturePageState extends State<ChatCapturePage> {
   late String projectId = widget.repository.projects.first.id;
   final TextEditingController promptController = TextEditingController();
+  bool isSaving = false;
 
   @override
   void dispose() {
@@ -1405,9 +1557,13 @@ class _ChatCapturePageState extends State<ChatCapturePage> {
         TextField(
           key: const Key('prompt-field'),
           controller: promptController,
+          keyboardType: TextInputType.multiline,
           minLines: 8,
           maxLines: 14,
           textInputAction: TextInputAction.newline,
+          textCapitalization: TextCapitalization.none,
+          enableSuggestions: true,
+          autocorrect: false,
           decoration: InputDecoration(
             alignLabelWithHint: true,
             labelText: l.promptLabel,
@@ -1423,9 +1579,14 @@ class _ChatCapturePageState extends State<ChatCapturePage> {
         const SizedBox(height: 16),
         FilledButton.icon(
           key: const Key('ask-save-button'),
-          onPressed: _savePrompt,
-          icon: const Icon(Icons.auto_awesome),
-          label: Text(l.askAndSave),
+          onPressed: isSaving ? null : _savePrompt,
+          icon: isSaving
+              ? const SizedBox.square(
+                  dimension: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.auto_awesome),
+          label: Text(isSaving ? l.askingAndSaving : l.askAndSave),
         ),
         const SizedBox(height: 16),
         Text(l.recentCaptures, style: Theme.of(context).textTheme.titleMedium),
@@ -1449,7 +1610,7 @@ class _ChatCapturePageState extends State<ChatCapturePage> {
     );
   }
 
-  void _savePrompt() {
+  Future<void> _savePrompt() async {
     final prompt = promptController.text.trim();
     if (prompt.isEmpty) {
       final l = AppText.of(widget.repository.settings.language);
@@ -1458,16 +1619,34 @@ class _ChatCapturePageState extends State<ChatCapturePage> {
       ).showSnackBar(SnackBar(content: Text(l.enterPrompt)));
       return;
     }
-    final conversation = widget.repository.createConversation(
-      projectId: projectId,
-      prompt: prompt,
-    );
-    promptController.clear();
     final l = AppText.of(widget.repository.settings.language);
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(l.saved(conversation.title))));
-    setState(() {});
+    setState(() {
+      isSaving = true;
+    });
+    try {
+      final result = await widget.repository.createConversation(
+        projectId: projectId,
+        prompt: prompt,
+      );
+      if (!mounted) {
+        return;
+      }
+      promptController.clear();
+      final message = switch (result.result) {
+        CaptureSaveResult.answered => l.saved(result.conversation.title),
+        CaptureSaveResult.missingApiKey => l.savedWithMissingKey,
+        CaptureSaveResult.apiError => l.savedWithAiError,
+      };
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
+    } finally {
+      if (mounted) {
+        setState(() {
+          isSaving = false;
+        });
+      }
+    }
   }
 }
 
@@ -1691,11 +1870,13 @@ class _SecurityPageState extends State<SecurityPage> {
             prefixIcon: const Icon(Icons.key_outlined),
             suffixIcon: IconButton(
               tooltip: l.saveApiKey,
-              onPressed: () {
-                final hasKey = apiKeyController.text.trim().isNotEmpty;
-                widget.repository.updateSettings(
-                  settings.copyWith(apiKeySaved: hasKey),
+              onPressed: () async {
+                final hasKey = await widget.repository.saveApiKey(
+                  apiKeyController.text,
                 );
+                if (!context.mounted) {
+                  return;
+                }
                 apiKeyController.clear();
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
