@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -75,6 +76,31 @@ enum AppLanguage {
   final String label;
 }
 
+extension AiRoleStorage on AiRole {
+  String get storageValue {
+    return switch (this) {
+      AiRole.user => 'user',
+      AiRole.assistant => 'assistant',
+    };
+  }
+
+  static AiRole fromStorageValue(String? value) {
+    return switch (value) {
+      'assistant' => AiRole.assistant,
+      _ => AiRole.user,
+    };
+  }
+}
+
+extension AppLanguageStorage on AppLanguage {
+  static AppLanguage fromCode(String? code) {
+    return AppLanguage.values.firstWhere(
+      (language) => language.code == code,
+      orElse: () => AppLanguage.ko,
+    );
+  }
+}
+
 class AppText {
   const AppText(this.language);
 
@@ -98,7 +124,7 @@ class AppText {
   String get markdownCopied =>
       pick(ko: '마크다운을 복사했습니다', en: 'Markdown copied', ja: 'Markdownをコピーしました');
   String get library => pick(ko: '라이브러리', en: 'Library', ja: 'ライブラリ');
-  String get capture => pick(ko: '캡처', en: 'Capture', ja: '保存');
+  String get aiChat => pick(ko: 'AI 채팅', en: 'AI Chat', ja: 'AIチャット');
   String get export => pick(ko: '내보내기', en: 'Export', ja: 'エクスポート');
   String get settings => pick(ko: '설정', en: 'Settings', ja: '設定');
   String get searchHint => pick(
@@ -123,30 +149,60 @@ class AppText {
       pick(ko: '추출된 코드', en: 'Extracted code', ja: '抽出コード');
   String get user => pick(ko: '사용자', en: 'User', ja: 'ユーザー');
   String get assistant => pick(ko: 'AI', en: 'Assistant', ja: 'AI');
-  String get captureAiChat =>
-      pick(ko: 'AI 대화 캡처', en: 'Capture AI chat', ja: 'AI会話を保存');
+  String get captureAiChat => pick(ko: 'AI 채팅', en: 'AI Chat', ja: 'AIチャット');
   String get captureDescription => pick(
-    ko: '저장된 OpenAI API 키로 답변을 생성하고, 프롬프트와 응답을 함께 로컬에 저장합니다.',
-    en: 'Uses the saved OpenAI API key to generate an answer and stores both prompt and response locally.',
-    ja: '保存済みのOpenAI APIキーで回答を生成し、プロンプトと応答をローカルに保存します。',
+    ko: '사용자 API 키로 답변을 생성하고 대화를 암호화된 로컬 지식으로 저장합니다.',
+    en: 'Uses your API key to answer and save the chat as encrypted local knowledge.',
+    ja: 'ユーザーのAPIキーで回答し、会話を暗号化されたローカル知識として保存します。',
   );
   String get project => pick(ko: '프로젝트', en: 'Project', ja: 'プロジェクト');
-  String get promptLabel => pick(
-    ko: '프롬프트 또는 붙여넣은 AI 대화',
-    en: 'Prompt or pasted AI conversation',
-    ja: 'プロンプトまたは貼り付けたAI会話',
-  );
-  String get promptHint => pick(
-    ko: '대화, 코드 스니펫, 새 AI 프롬프트를 붙여넣으세요...',
-    en: 'Paste a conversation, code snippet, or new AI prompt...',
-    ja: '会話、コードスニペット、新しいAIプロンプトを貼り付けてください...',
-  );
-  String get askAndSave =>
-      pick(ko: '질문하고 저장', en: 'Ask and save', ja: '質問して保存');
+  String get promptLabel => pick(ko: '메시지', en: 'Message', ja: 'メッセージ');
+  String get promptHint =>
+      pick(ko: 'AI에게 물어보세요', en: 'Ask AI', ja: 'AIに質問してください');
+  String get askAndSave => pick(ko: '보내기', en: 'Send', ja: '送信');
   String get askingAndSaving =>
       pick(ko: '답변 생성 중...', en: 'Asking...', ja: '回答を生成中...');
   String get recentCaptures =>
-      pick(ko: '최근 캡처', en: 'Recent captures', ja: '最近の保存');
+      pick(ko: '최근 AI 채팅', en: 'Recent AI chats', ja: '最近のAIチャット');
+  String get newChat => pick(ko: '새 채팅', en: 'New chat', ja: '新しいチャット');
+  String get newProject =>
+      pick(ko: '새 프로젝트', en: 'New project', ja: '新しいプロジェクト');
+  String get projectNameLabel =>
+      pick(ko: '프로젝트 이름', en: 'Project name', ja: 'プロジェクト名');
+  String get projectDescriptionLabel =>
+      pick(ko: '프로젝트 설명', en: 'Project description', ja: 'プロジェクト説明');
+  String get create => pick(ko: '만들기', en: 'Create', ja: '作成');
+  String get cancel => pick(ko: '취소', en: 'Cancel', ja: 'キャンセル');
+  String get enterProjectName => pick(
+    ko: '프로젝트 이름을 입력하세요',
+    en: 'Enter a project name',
+    ja: 'プロジェクト名を入力してください',
+  );
+  String get openRecentChats =>
+      pick(ko: '최근 채팅 열기', en: 'Open recent chats', ja: '最近のチャットを開く');
+  String get messageOptions =>
+      pick(ko: '메시지 옵션', en: 'Message options', ja: 'メッセージオプション');
+  String get securityControls =>
+      pick(ko: '보안 기능', en: 'Security controls', ja: 'セキュリティ機能');
+  String get emptyChatTitle =>
+      pick(ko: '새 AI 채팅을 시작하세요', en: 'Start a new AI chat', ja: '新しいAIチャットを開始');
+  String get emptyChatHint => pick(
+    ko: '아래 입력창에 메시지를 보내면 답변과 함께 로컬 지식으로 저장됩니다.',
+    en: 'Send a message below to save the answer as local knowledge.',
+    ja: '下の入力欄から送信すると、回答と一緒にローカル知識として保存されます。',
+  );
+  String get noRecentChats => pick(
+    ko: '아직 최근 채팅이 없습니다',
+    en: 'No recent chats yet',
+    ja: '最近のチャットはまだありません',
+  );
+  String get savedLocally =>
+      pick(ko: '응답 후 로컬 저장', en: 'Save after response', ja: '応答後にローカル保存');
+  String get savedLocallyDescription => pick(
+    ko: '메시지와 AI 답변을 암호화된 로컬 지식으로 남깁니다.',
+    en: 'Keeps messages and AI answers as encrypted local knowledge.',
+    ja: 'メッセージとAI回答を暗号化されたローカル知識として保存します。',
+  );
   String get enterPrompt => pick(
     ko: '저장할 프롬프트를 입력하세요',
     en: 'Enter a prompt before saving',
@@ -180,7 +236,7 @@ class AppText {
   String get sensitiveMasking =>
       pick(ko: '민감정보 마스킹', en: 'Sensitive masking', ja: '機密情報マスキング');
   String get sqlCipherReady =>
-      pick(ko: 'SQLCipher 준비', en: 'SQLCipher-ready', ja: 'SQLCipher対応');
+      pick(ko: '암호화 저장', en: 'Encrypted storage', ja: '暗号化保存');
   String get appLock => pick(ko: '앱 잠금', en: 'App lock', ja: 'アプリロック');
   String onOff(bool value) => value
       ? pick(ko: '켜짐', en: 'on', ja: 'オン')
@@ -252,9 +308,9 @@ class AppText {
     ja: '暗号化ローカルデータベース',
   );
   String get encryptedDbSubtitle => pick(
-    ko: 'SQLCipher 기반 SQLite 저장소를 전제로 설계합니다.',
-    en: 'Designed for SQLCipher-backed SQLite storage.',
-    ja: 'SQLCipherベースのSQLite保存を前提に設計します。',
+    ko: '대화와 설정을 기기 보안 저장소에 남기고, SQLCipher SQLite 전환 경계를 유지합니다.',
+    en: 'Persists conversations and settings in device secure storage while keeping the SQLCipher SQLite migration boundary clear.',
+    ja: '会話と設定を端末の安全なストレージに保存し、SQLCipher SQLiteへの移行境界を保ちます。',
   );
   String get e2eeTitle =>
       pick(ko: 'E2EE 클라우드 동기화', en: 'E2EE cloud sync', ja: 'E2EEクラウド同期');
@@ -266,9 +322,9 @@ class AppText {
   String get implementationBoundary =>
       pick(ko: '구현 경계', en: 'Implementation boundary', ja: '実装境界');
   String get implementationBoundaryBody => pick(
-    ko: '운영 단계에서는 이 저장소를 conversations, messages, tags SQLite 테이블에 연결하고, provider 키는 Keychain 또는 Keystore에만 저장하며, 사용자 대화 로그는 제품 서버에 저장하지 않아야 합니다.',
-    en: 'Production storage should connect this repository to SQLite tables for conversations, messages, and tags; store provider keys only in Keychain or Keystore; and keep user chat logs off product servers.',
-    ja: '本番環境では、このリポジトリをconversations、messages、tagsのSQLiteテーブルに接続し、providerキーはKeychainまたはKeystoreにのみ保存し、ユーザー会話ログを製品サーバーに保存しないようにします。',
+    ko: '현재 1단계는 대화, 태그, 보안 설정을 암호화된 로컬 스냅샷으로 복원합니다. 대용량 운영 단계에서는 같은 저장소 경계를 conversations, messages, tags SQLCipher 테이블로 교체하고, provider 키는 Keychain 또는 Keystore에만 저장해야 합니다.',
+    en: 'This phase restores conversations, tags, and security settings from an encrypted local snapshot. At larger production scale, the same repository boundary can move to SQLCipher tables for conversations, messages, and tags while provider keys stay only in Keychain or Keystore.',
+    ja: '現在の第1段階では、会話、タグ、セキュリティ設定を暗号化されたローカルスナップショットから復元します。大規模な本番運用では、同じリポジトリ境界をconversations、messages、tagsのSQLCipherテーブルに移行し、providerキーはKeychainまたはKeystoreのみに保存します。',
   );
   String get noKnowledge => pick(
     ko: '일치하는 지식이 없습니다',
@@ -301,6 +357,26 @@ class ProjectSpace {
   final String name;
   final String description;
   final Color color;
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'description': description,
+      'color': color.toARGB32(),
+    };
+  }
+
+  static ProjectSpace fromJson(Map<String, dynamic> json) {
+    return ProjectSpace(
+      id:
+          json['id']?.toString() ??
+          'project-${DateTime.now().microsecondsSinceEpoch}',
+      name: json['name']?.toString() ?? 'Project',
+      description: json['description']?.toString() ?? '',
+      color: Color(json['color'] is int ? json['color'] as int : 0xFF176B5D),
+    );
+  }
 }
 
 class KnowledgeMessage {
@@ -315,6 +391,28 @@ class KnowledgeMessage {
   final AiRole role;
   final String content;
   final DateTime createdAt;
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'role': role.storageValue,
+      'content': content,
+      'createdAt': createdAt.toIso8601String(),
+    };
+  }
+
+  static KnowledgeMessage fromJson(Map<String, dynamic> json) {
+    return KnowledgeMessage(
+      id:
+          json['id']?.toString() ??
+          'msg-${DateTime.now().microsecondsSinceEpoch}',
+      role: AiRoleStorage.fromStorageValue(json['role']?.toString()),
+      content: json['content']?.toString() ?? '',
+      createdAt:
+          DateTime.tryParse(json['createdAt']?.toString() ?? '') ??
+          DateTime.now(),
+    );
+  }
 }
 
 enum CaptureSaveResult { answered, missingApiKey, apiError }
@@ -492,6 +590,41 @@ class Conversation {
       manualTags: manualTags ?? this.manualTags,
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'projectId': projectId,
+      'title': title,
+      'createdAt': createdAt.toIso8601String(),
+      'updatedAt': updatedAt.toIso8601String(),
+      'manualTags': manualTags,
+      'messages': messages.map((message) => message.toJson()).toList(),
+    };
+  }
+
+  static Conversation fromJson(Map<String, dynamic> json) {
+    final now = DateTime.now();
+    final messagesJson = json['messages'];
+    return Conversation(
+      id: json['id']?.toString() ?? 'conv-${now.microsecondsSinceEpoch}',
+      projectId: json['projectId']?.toString() ?? 'mobile',
+      title: json['title']?.toString() ?? 'Untitled conversation',
+      createdAt: DateTime.tryParse(json['createdAt']?.toString() ?? '') ?? now,
+      updatedAt: DateTime.tryParse(json['updatedAt']?.toString() ?? '') ?? now,
+      manualTags: _stringListFromJson(json['manualTags']),
+      messages: messagesJson is List
+          ? messagesJson
+                .whereType<Map>()
+                .map(
+                  (message) => KnowledgeMessage.fromJson(
+                    Map<String, dynamic>.from(message),
+                  ),
+                )
+                .toList()
+          : const [],
+    );
+  }
 }
 
 class SecuritySettings {
@@ -528,47 +661,73 @@ class SecuritySettings {
       language: language ?? this.language,
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'maskSensitiveInfo': maskSensitiveInfo,
+      'appLockEnabled': appLockEnabled,
+      'localDbEncryption': localDbEncryption,
+      'e2eeCloudSync': e2eeCloudSync,
+      'language': language.code,
+    };
+  }
+
+  static SecuritySettings fromJson(
+    Map<String, dynamic> json, {
+    required bool apiKeySaved,
+  }) {
+    return SecuritySettings(
+      maskSensitiveInfo: json['maskSensitiveInfo'] == true,
+      appLockEnabled: json['appLockEnabled'] == true,
+      localDbEncryption: json['localDbEncryption'] != false,
+      e2eeCloudSync: json['e2eeCloudSync'] == true,
+      apiKeySaved: apiKeySaved,
+      language: AppLanguageStorage.fromCode(json['language']?.toString()),
+    );
+  }
+}
+
+class _PersistedSnapshot {
+  const _PersistedSnapshot({
+    required this.settings,
+    required this.projects,
+    required this.conversations,
+  });
+
+  final SecuritySettings settings;
+  final List<ProjectSpace> projects;
+  final List<Conversation> conversations;
+}
+
+List<String> _stringListFromJson(dynamic value) {
+  if (value is! List) {
+    return const [];
+  }
+  return value.map((item) => item.toString()).toList();
 }
 
 class WikiRepository extends ChangeNotifier {
   WikiRepository()
-    : projects = const [
-        ProjectSpace(
-          id: 'mobile',
-          name: 'Mobile App',
-          description: 'Flutter, local-first storage, release notes',
-          color: Color(0xFF176B5D),
-        ),
-        ProjectSpace(
-          id: 'research',
-          name: 'Research',
-          description: 'AI memory, search, knowledge graph ideas',
-          color: Color(0xFF8C4A2F),
-        ),
-        ProjectSpace(
-          id: 'security',
-          name: 'Security',
-          description: 'Keychain, SQLCipher, privacy controls',
-          color: Color(0xFF5B628A),
-        ),
-      ],
-      settings = const SecuritySettings(
+    : settings = const SecuritySettings(
         maskSensitiveInfo: true,
         appLockEnabled: false,
         localDbEncryption: true,
         e2eeCloudSync: false,
         apiKeySaved: false,
       ) {
+    projects = _defaultProjects();
     conversations = _seedConversations();
   }
 
   static const _apiKeyStorageKey = 'openai_api_key';
+  static const _appStateStorageKey = 'llm_wiki_app_state_v1';
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
   final OpenAiClient _openAiClient = OpenAiClient();
 
-  final List<ProjectSpace> projects;
+  late List<ProjectSpace> projects;
   late List<Conversation> conversations;
   SecuritySettings settings;
+  bool isInitialized = false;
 
   ProjectSpace projectById(String id) {
     return projects.firstWhere(
@@ -617,18 +776,52 @@ class WikiRepository extends ChangeNotifier {
       ..sort();
   }
 
+  ProjectSpace createProject({required String name, String description = ''}) {
+    final cleanName = name.trim();
+    if (cleanName.isEmpty) {
+      throw ArgumentError('Project name is required');
+    }
+    final now = DateTime.now();
+    final project = ProjectSpace(
+      id: _projectIdFromName(cleanName, now),
+      name: cleanName,
+      description: description.trim().isEmpty
+          ? 'Custom project'
+          : description.trim(),
+      color: _projectColorForIndex(projects.length),
+    );
+    projects = [...projects, project];
+    unawaited(_persistSnapshot());
+    notifyListeners();
+    return project;
+  }
+
+  Future<void> initialize() async {
+    final apiKeySaved = await _loadApiKeySaved();
+    final snapshot = await _readPersistedSnapshot(apiKeySaved: apiKeySaved);
+    if (snapshot != null) {
+      settings = snapshot.settings;
+      projects = snapshot.projects;
+      conversations = snapshot.conversations;
+    } else if (apiKeySaved != settings.apiKeySaved) {
+      settings = settings.copyWith(apiKeySaved: apiKeySaved);
+    }
+    isInitialized = true;
+    notifyListeners();
+  }
+
   Future<void> loadSecureState() async {
+    await initialize();
+  }
+
+  Future<bool> _loadApiKeySaved() async {
     try {
       final apiKey = await _secureStorage.read(key: _apiKeyStorageKey);
-      final hasApiKey = apiKey != null && apiKey.trim().isNotEmpty;
-      if (hasApiKey != settings.apiKeySaved) {
-        settings = settings.copyWith(apiKeySaved: hasApiKey);
-        notifyListeners();
-      }
+      return apiKey != null && apiKey.trim().isNotEmpty;
     } on MissingPluginException {
-      return;
+      return false;
     } catch (_) {
-      return;
+      return false;
     }
   }
 
@@ -639,6 +832,7 @@ class WikiRepository extends ChangeNotifier {
     }
     await _secureStorage.write(key: _apiKeyStorageKey, value: trimmed);
     settings = settings.copyWith(apiKeySaved: true);
+    await _persistSnapshot();
     notifyListeners();
     return true;
   }
@@ -706,6 +900,7 @@ class WikiRepository extends ChangeNotifier {
       ],
     );
     conversations = [conversation, ...conversations];
+    await _persistSnapshot();
     notifyListeners();
     return CaptureResult(conversation: conversation, result: result);
   }
@@ -727,12 +922,90 @@ class WikiRepository extends ChangeNotifier {
       final tags = {...conversation.manualTags, normalized}.toList()..sort();
       return conversation.copyWith(manualTags: tags, updatedAt: DateTime.now());
     }).toList();
+    unawaited(_persistSnapshot());
     notifyListeners();
   }
 
   void updateSettings(SecuritySettings nextSettings) {
     settings = nextSettings;
+    unawaited(_persistSnapshot());
     notifyListeners();
+  }
+
+  Future<_PersistedSnapshot?> _readPersistedSnapshot({
+    required bool apiKeySaved,
+  }) async {
+    try {
+      final raw = await _secureStorage.read(key: _appStateStorageKey);
+      if (raw == null || raw.trim().isEmpty) {
+        return null;
+      }
+      final decoded = jsonDecode(raw);
+      if (decoded is! Map<String, dynamic>) {
+        return null;
+      }
+
+      final settingsJson = decoded['settings'];
+      final projectsJson = decoded['projects'];
+      final conversationsJson = decoded['conversations'];
+      final restoredSettings = settingsJson is Map<String, dynamic>
+          ? SecuritySettings.fromJson(settingsJson, apiKeySaved: apiKeySaved)
+          : settings.copyWith(apiKeySaved: apiKeySaved);
+      final restoredProjects = projectsJson is List
+          ? projectsJson
+                .whereType<Map>()
+                .map(
+                  (project) =>
+                      ProjectSpace.fromJson(Map<String, dynamic>.from(project)),
+                )
+                .where((project) => project.id.trim().isNotEmpty)
+                .toList()
+          : <ProjectSpace>[];
+      final restoredConversations = conversationsJson is List
+          ? conversationsJson
+                .whereType<Map>()
+                .map(
+                  (conversation) => Conversation.fromJson(
+                    Map<String, dynamic>.from(conversation),
+                  ),
+                )
+                .where((conversation) => conversation.messages.isNotEmpty)
+                .toList()
+          : <Conversation>[];
+      return _PersistedSnapshot(
+        settings: restoredSettings,
+        projects: restoredProjects.isEmpty
+            ? _defaultProjects()
+            : restoredProjects,
+        conversations: restoredConversations,
+      );
+    } on MissingPluginException {
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> _persistSnapshot() async {
+    try {
+      final payload = {
+        'schemaVersion': 1,
+        'savedAt': DateTime.now().toIso8601String(),
+        'settings': settings.toJson(),
+        'projects': projects.map((project) => project.toJson()).toList(),
+        'conversations': conversations
+            .map((conversation) => conversation.toJson())
+            .toList(),
+      };
+      await _secureStorage.write(
+        key: _appStateStorageKey,
+        value: jsonEncode(payload),
+      );
+    } on MissingPluginException {
+      return;
+    } catch (_) {
+      return;
+    }
   }
 
   String exportMarkdown({String projectId = 'all'}) {
@@ -890,6 +1163,50 @@ class WikiRepository extends ChangeNotifier {
     ];
   }
 
+  List<ProjectSpace> _defaultProjects() {
+    return const [
+      ProjectSpace(
+        id: 'mobile',
+        name: 'Mobile App',
+        description: 'Flutter, local-first storage, release notes',
+        color: Color(0xFF176B5D),
+      ),
+      ProjectSpace(
+        id: 'research',
+        name: 'Research',
+        description: 'AI memory, search, knowledge graph ideas',
+        color: Color(0xFF8C4A2F),
+      ),
+      ProjectSpace(
+        id: 'security',
+        name: 'Security',
+        description: 'Keychain, SQLCipher, privacy controls',
+        color: Color(0xFF5B628A),
+      ),
+    ];
+  }
+
+  String _projectIdFromName(String name, DateTime now) {
+    final slug = name
+        .toLowerCase()
+        .replaceAll(RegExp(r'[^a-z0-9가-힣]+'), '-')
+        .replaceAll(RegExp(r'^-+|-+$'), '');
+    final base = slug.isEmpty ? 'project' : slug;
+    return '$base-${now.microsecondsSinceEpoch}';
+  }
+
+  Color _projectColorForIndex(int index) {
+    const colors = [
+      Color(0xFF176B5D),
+      Color(0xFF8C4A2F),
+      Color(0xFF5B628A),
+      Color(0xFFC99A2E),
+      Color(0xFF3E6F8E),
+      Color(0xFF7A4E7D),
+    ];
+    return colors[index % colors.length];
+  }
+
   List<String> _tagsFromPrompt(String prompt) {
     final lower = prompt.toLowerCase();
     final tags = <String>{};
@@ -939,14 +1256,21 @@ class _WikiShellState extends State<WikiShell> {
   @override
   void initState() {
     super.initState();
-    repository.loadSecureState();
+    _initializeRepository();
+  }
+
+  Future<void> _initializeRepository() async {
+    await repository.initialize();
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final pages = [
-      LibraryPage(repository: repository),
       ChatCapturePage(repository: repository),
+      LibraryPage(repository: repository),
       ExportPage(repository: repository),
       SecurityPage(repository: repository),
     ];
@@ -986,14 +1310,14 @@ class _WikiShellState extends State<WikiShell> {
             },
             destinations: [
               NavigationDestination(
+                icon: const Icon(Icons.chat_bubble_outline),
+                selectedIcon: const Icon(Icons.chat_bubble),
+                label: l.aiChat,
+              ),
+              NavigationDestination(
                 icon: const Icon(Icons.library_books_outlined),
                 selectedIcon: const Icon(Icons.library_books),
                 label: l.library,
-              ),
-              NavigationDestination(
-                icon: const Icon(Icons.add_comment_outlined),
-                selectedIcon: const Icon(Icons.add_comment),
-                label: l.capture,
               ),
               NavigationDestination(
                 icon: const Icon(Icons.ios_share_outlined),
@@ -1511,6 +1835,7 @@ class ChatCapturePage extends StatefulWidget {
 class _ChatCapturePageState extends State<ChatCapturePage> {
   late String projectId = widget.repository.projects.first.id;
   final TextEditingController promptController = TextEditingController();
+  Conversation? activeConversation;
   bool isSaving = false;
 
   @override
@@ -1521,91 +1846,50 @@ class _ChatCapturePageState extends State<ChatCapturePage> {
 
   @override
   Widget build(BuildContext context) {
-    final l = AppText.of(widget.repository.settings.language);
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+    return Column(
       children: [
-        Text(l.captureAiChat, style: Theme.of(context).textTheme.titleLarge),
-        const SizedBox(height: 8),
-        Text(
-          l.captureDescription,
-          style: Theme.of(context).textTheme.bodyMedium,
+        _ChatTopBar(
+          repository: widget.repository,
+          projectId: projectId,
+          onOpenRecentChats: _openRecentChats,
+          onNewChat: _startNewChat,
+          onCreateProject: _openCreateProjectDialog,
+          onProjectSelected: _selectProject,
         ),
-        const SizedBox(height: 16),
-        DropdownMenu<String>(
-          width: double.infinity,
-          initialSelection: projectId,
-          label: Text(l.project),
-          leadingIcon: const Icon(Icons.folder_outlined),
-          onSelected: (value) {
-            if (value != null) {
-              setState(() {
-                projectId = value;
-              });
-            }
-          },
-          dropdownMenuEntries: widget.repository.projects
-              .map(
-                (project) => DropdownMenuEntry<String>(
-                  value: project.id,
-                  label: l.projectName(project.id, project.name),
-                ),
-              )
-              .toList(),
-        ),
-        const SizedBox(height: 12),
-        TextField(
-          key: const Key('prompt-field'),
-          controller: promptController,
-          keyboardType: TextInputType.multiline,
-          minLines: 8,
-          maxLines: 14,
-          textInputAction: TextInputAction.newline,
-          textCapitalization: TextCapitalization.none,
-          enableSuggestions: true,
-          autocorrect: false,
-          decoration: InputDecoration(
-            alignLabelWithHint: true,
-            labelText: l.promptLabel,
-            hintText: l.promptHint,
-            prefixIcon: const Padding(
-              padding: EdgeInsets.only(bottom: 138),
-              child: Icon(Icons.chat_bubble_outline),
-            ),
-          ),
-        ),
-        const SizedBox(height: 12),
-        _SecurityNotice(settings: widget.repository.settings),
-        const SizedBox(height: 16),
-        FilledButton.icon(
-          key: const Key('ask-save-button'),
-          onPressed: isSaving ? null : _savePrompt,
-          icon: isSaving
-              ? const SizedBox.square(
-                  dimension: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Icon(Icons.auto_awesome),
-          label: Text(isSaving ? l.askingAndSaving : l.askAndSave),
-        ),
-        const SizedBox(height: 16),
-        Text(l.recentCaptures, style: Theme.of(context).textTheme.titleMedium),
-        const SizedBox(height: 8),
-        ...widget.repository.conversations
-            .take(3)
-            .map(
-              (conversation) => Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: ConversationCard(
-                  conversation: conversation,
+        Expanded(
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+            children: [
+              if (activeConversation != null) ...[
+                _ActiveConversationTitle(
+                  conversation: activeConversation!,
                   project: widget.repository.projectById(
-                    conversation.projectId,
+                    activeConversation!.projectId,
                   ),
                   language: widget.repository.settings.language,
-                  onTap: () {},
                 ),
-              ),
-            ),
+                const SizedBox(height: 14),
+                ...activeConversation!.messages.map(
+                  (message) => _ChatMessageBubble(
+                    message: message,
+                    language: widget.repository.settings.language,
+                  ),
+                ),
+              ] else
+                _EmptyChatState(language: widget.repository.settings.language),
+            ],
+          ),
+        ),
+        _ChatComposer(
+          controller: promptController,
+          isSaving: isSaving,
+          repository: widget.repository,
+          language: widget.repository.settings.language,
+          projectId: projectId,
+          onProjectSelected: _selectProject,
+          onCreateProject: _openCreateProjectDialog,
+          onSubmit: _savePrompt,
+        ),
       ],
     );
   }
@@ -1632,6 +1916,9 @@ class _ChatCapturePageState extends State<ChatCapturePage> {
         return;
       }
       promptController.clear();
+      setState(() {
+        activeConversation = result.conversation;
+      });
       final message = switch (result.result) {
         CaptureSaveResult.answered => l.saved(result.conversation.title),
         CaptureSaveResult.missingApiKey => l.savedWithMissingKey,
@@ -1648,40 +1935,661 @@ class _ChatCapturePageState extends State<ChatCapturePage> {
       }
     }
   }
+
+  void _startNewChat() {
+    promptController.clear();
+    setState(() {
+      activeConversation = null;
+    });
+  }
+
+  void _selectProject(String value) {
+    final projectChats = widget.repository.search(
+      query: '',
+      projectId: value,
+      selectedTags: const <String>{},
+    );
+    setState(() {
+      projectId = value;
+      activeConversation = projectChats.isEmpty ? null : projectChats.first;
+    });
+  }
+
+  void _openRecentChats() {
+    final l = AppText.of(widget.repository.settings.language);
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) {
+        final conversations = widget.repository.search(
+          query: '',
+          projectId: projectId,
+          selectedTags: const <String>{},
+        );
+        return SafeArea(
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+            children: [
+              Text(
+                '${l.recentCaptures} · ${l.projectName(widget.repository.projectById(projectId).id, widget.repository.projectById(projectId).name)}',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 12),
+              FilledButton.icon(
+                onPressed: () {
+                  Navigator.pop(context);
+                  _startNewChat();
+                },
+                icon: const Icon(Icons.edit_square),
+                label: Text(l.newChat),
+              ),
+              const SizedBox(height: 12),
+              if (conversations.isEmpty)
+                _EmptyRecentChats(language: widget.repository.settings.language)
+              else
+                ...conversations.map(
+                  (conversation) => Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: ConversationCard(
+                      conversation: conversation,
+                      project: widget.repository.projectById(
+                        conversation.projectId,
+                      ),
+                      language: widget.repository.settings.language,
+                      onTap: () {
+                        setState(() {
+                          activeConversation = conversation;
+                          projectId = conversation.projectId;
+                        });
+                        Navigator.pop(context);
+                      },
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _openCreateProjectDialog() async {
+    final l = AppText.of(widget.repository.settings.language);
+    final nameController = TextEditingController();
+    final descriptionController = TextEditingController();
+    final project = await showDialog<ProjectSpace>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(l.newProject),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                key: const Key('new-project-name-field'),
+                controller: nameController,
+                autofocus: true,
+                decoration: InputDecoration(
+                  labelText: l.projectNameLabel,
+                  prefixIcon: const Icon(Icons.folder_outlined),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: descriptionController,
+                decoration: InputDecoration(
+                  labelText: l.projectDescriptionLabel,
+                  prefixIcon: const Icon(Icons.notes_outlined),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(l.cancel),
+            ),
+            FilledButton(
+              key: const Key('create-project-button'),
+              onPressed: () {
+                final name = nameController.text.trim();
+                if (name.isEmpty) {
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text(l.enterProjectName)));
+                  return;
+                }
+                final created = widget.repository.createProject(
+                  name: name,
+                  description: descriptionController.text,
+                );
+                Navigator.pop(context, created);
+              },
+              child: Text(l.create),
+            ),
+          ],
+        );
+      },
+    );
+    nameController.dispose();
+    descriptionController.dispose();
+    if (project == null || !mounted) {
+      return;
+    }
+    setState(() {
+      projectId = project.id;
+      activeConversation = null;
+    });
+  }
 }
 
-class _SecurityNotice extends StatelessWidget {
-  const _SecurityNotice({required this.settings});
+class _ChatTopBar extends StatelessWidget {
+  const _ChatTopBar({
+    required this.repository,
+    required this.projectId,
+    required this.onOpenRecentChats,
+    required this.onNewChat,
+    required this.onCreateProject,
+    required this.onProjectSelected,
+  });
 
-  final SecuritySettings settings;
+  static const String _newProjectMenuValue = '__new_project__';
+
+  final WikiRepository repository;
+  final String projectId;
+  final VoidCallback onOpenRecentChats;
+  final VoidCallback onNewChat;
+  final VoidCallback onCreateProject;
+  final ValueChanged<String> onProjectSelected;
 
   @override
   Widget build(BuildContext context) {
-    final l = AppText.of(settings.language);
-    final items = [
-      (
-        settings.maskSensitiveInfo,
-        l.sensitiveMasking,
-        Icons.visibility_off_outlined,
+    final l = AppText.of(repository.settings.language);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 4, 12, 10),
+      child: Row(
+        children: [
+          IconButton(
+            tooltip: l.openRecentChats,
+            onPressed: onOpenRecentChats,
+            icon: const Icon(Icons.menu),
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  l.captureAiChat,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                Text(
+                  l.captureDescription,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            tooltip: l.newChat,
+            onPressed: onNewChat,
+            icon: const Icon(Icons.edit_square),
+          ),
+          IconButton(
+            tooltip: l.copyMarkdownExport,
+            onPressed: () async {
+              await Clipboard.setData(
+                ClipboardData(text: repository.exportMarkdown()),
+              );
+              if (!context.mounted) {
+                return;
+              }
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(content: Text(l.markdownCopied)));
+            },
+            icon: const Icon(Icons.ios_share_outlined),
+          ),
+          PopupMenuButton<String>(
+            tooltip: l.project,
+            icon: const Icon(Icons.more_horiz),
+            initialValue: projectId,
+            onSelected: (value) {
+              if (value == _newProjectMenuValue) {
+                onCreateProject();
+                return;
+              }
+              onProjectSelected(value);
+            },
+            itemBuilder: (context) {
+              return [
+                ...repository.projects.map(
+                  (project) => PopupMenuItem<String>(
+                    value: project.id,
+                    child: Row(
+                      children: [
+                        Icon(Icons.folder_outlined, color: project.color),
+                        const SizedBox(width: 8),
+                        Text(l.projectName(project.id, project.name)),
+                      ],
+                    ),
+                  ),
+                ),
+                const PopupMenuDivider(),
+                PopupMenuItem<String>(
+                  value: _newProjectMenuValue,
+                  child: Row(
+                    children: [
+                      const Icon(Icons.create_new_folder_outlined),
+                      const SizedBox(width: 8),
+                      Text(l.newProject),
+                    ],
+                  ),
+                ),
+              ];
+            },
+          ),
+        ],
       ),
-      (settings.localDbEncryption, l.sqlCipherReady, Icons.storage_outlined),
-      (settings.appLockEnabled, l.appLock, Icons.lock_outline),
-    ];
+    );
+  }
+}
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: items.map((item) {
-            return Chip(
-              avatar: Icon(item.$3, size: 16),
-              label: Text('${item.$2}: ${l.onOff(item.$1)}'),
-            );
-          }).toList(),
+class _ActiveConversationTitle extends StatelessWidget {
+  const _ActiveConversationTitle({
+    required this.conversation,
+    required this.project,
+    required this.language,
+  });
+
+  final Conversation conversation;
+  final ProjectSpace project;
+  final AppLanguage language;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppText.of(language);
+    return Row(
+      children: [
+        Container(
+          width: 34,
+          height: 34,
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(
+            Icons.auto_awesome,
+            color: Theme.of(context).colorScheme.primary,
+            size: 20,
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                conversation.title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              Text(
+                l.projectName(project.id, project.name),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.labelMedium,
+              ),
+            ],
+          ),
+        ),
+        IconButton(
+          tooltip: l.copyMarkdownExport,
+          onPressed: () async {
+            await Clipboard.setData(ClipboardData(text: conversation.body));
+            if (!context.mounted) {
+              return;
+            }
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(l.markdownCopied)));
+          },
+          icon: const Icon(Icons.content_copy_outlined),
+        ),
+      ],
+    );
+  }
+}
+
+class _ChatMessageBubble extends StatelessWidget {
+  const _ChatMessageBubble({required this.message, required this.language});
+
+  final KnowledgeMessage message;
+  final AppLanguage language;
+
+  @override
+  Widget build(BuildContext context) {
+    final isUser = message.role == AiRole.user;
+    final l = AppText.of(language);
+    final colorScheme = Theme.of(context).colorScheme;
+    return Align(
+      alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 680),
+        margin: const EdgeInsets.only(bottom: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+        decoration: BoxDecoration(
+          color: isUser ? colorScheme.primary : Colors.white,
+          borderRadius: BorderRadius.only(
+            topLeft: const Radius.circular(22),
+            topRight: const Radius.circular(22),
+            bottomLeft: Radius.circular(isUser ? 22 : 4),
+            bottomRight: Radius.circular(isUser ? 4 : 22),
+          ),
+          border: isUser ? null : Border.all(color: const Color(0xFFE3DFD3)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (!isUser) ...[
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.auto_awesome,
+                    color: colorScheme.primary,
+                    size: 18,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    l.assistant,
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      color: colorScheme.primary,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+            ],
+            Text(
+              message.content,
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                color: isUser ? Colors.white : const Color(0xFF26332E),
+                height: 1.48,
+              ),
+            ),
+          ],
         ),
       ),
+    );
+  }
+}
+
+class _EmptyChatState extends StatelessWidget {
+  const _EmptyChatState({required this.language});
+
+  final AppLanguage language;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppText.of(language);
+    return Padding(
+      padding: const EdgeInsets.only(top: 56),
+      child: Column(
+        children: [
+          Container(
+            width: 58,
+            height: 58,
+            decoration: BoxDecoration(
+              color: Theme.of(
+                context,
+              ).colorScheme.primary.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.chat_bubble,
+              color: Theme.of(context).colorScheme.primary,
+              size: 28,
+            ),
+          ),
+          const SizedBox(height: 14),
+          Text(
+            l.emptyChatTitle,
+            style: Theme.of(context).textTheme.titleLarge,
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            l.emptyChatHint,
+            style: Theme.of(context).textTheme.bodyMedium,
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _EmptyRecentChats extends StatelessWidget {
+  const _EmptyRecentChats({required this.language});
+
+  final AppLanguage language;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppText.of(language);
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Row(
+          children: [
+            Icon(
+              Icons.chat_bubble_outline,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            const SizedBox(width: 12),
+            Expanded(child: Text(l.noRecentChats)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ChatComposer extends StatelessWidget {
+  const _ChatComposer({
+    required this.controller,
+    required this.isSaving,
+    required this.repository,
+    required this.language,
+    required this.projectId,
+    required this.onProjectSelected,
+    required this.onCreateProject,
+    required this.onSubmit,
+  });
+
+  final TextEditingController controller;
+  final bool isSaving;
+  final WikiRepository repository;
+  final AppLanguage language;
+  final String projectId;
+  final ValueChanged<String> onProjectSelected;
+  final VoidCallback onCreateProject;
+  final VoidCallback onSubmit;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppText.of(language);
+    return DecoratedBox(
+      decoration: const BoxDecoration(
+        color: Color(0xFFF7F5EF),
+        border: Border(top: BorderSide(color: Color(0xFFE3DFD3))),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 10, 16, 14),
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 64),
+          padding: const EdgeInsets.fromLTRB(8, 6, 8, 6),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(color: const Color(0xFFD9DED7)),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              IconButton(
+                tooltip: l.messageOptions,
+                onPressed: () => _openMessageOptions(context),
+                icon: const Icon(Icons.tune),
+              ),
+              Expanded(
+                child: TextField(
+                  key: const Key('prompt-field'),
+                  controller: controller,
+                  keyboardType: TextInputType.multiline,
+                  minLines: 1,
+                  maxLines: 5,
+                  textInputAction: TextInputAction.newline,
+                  textCapitalization: TextCapitalization.none,
+                  enableSuggestions: true,
+                  autocorrect: false,
+                  decoration: InputDecoration(
+                    labelText: l.promptLabel,
+                    hintText: l.promptHint,
+                    filled: false,
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
+              IconButton.filled(
+                key: const Key('ask-save-button'),
+                tooltip: isSaving ? l.askingAndSaving : l.askAndSave,
+                onPressed: isSaving ? null : onSubmit,
+                icon: isSaving
+                    ? const SizedBox.square(
+                        dimension: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.chat_bubble),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _openMessageOptions(BuildContext context) {
+    final l = AppText.of(language);
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            final settings = repository.settings;
+            return SafeArea(
+              child: ListView(
+                shrinkWrap: true,
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                children: [
+                  Text(
+                    l.messageOptions,
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 14),
+                  DropdownMenu<String>(
+                    width: double.infinity,
+                    initialSelection: projectId,
+                    label: Text(l.project),
+                    leadingIcon: const Icon(Icons.folder_outlined),
+                    onSelected: (value) {
+                      if (value != null) {
+                        onProjectSelected(value);
+                      }
+                    },
+                    dropdownMenuEntries: repository.projects
+                        .map(
+                          (project) => DropdownMenuEntry<String>(
+                            value: project.id,
+                            label: l.projectName(project.id, project.name),
+                          ),
+                        )
+                        .toList(),
+                  ),
+                  const SizedBox(height: 8),
+                  OutlinedButton.icon(
+                    onPressed: onCreateProject,
+                    icon: const Icon(Icons.create_new_folder_outlined),
+                    label: Text(l.newProject),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    l.securityControls,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  _SecuritySwitch(
+                    title: l.maskSensitiveTitle,
+                    subtitle: l.maskSensitiveSubtitle,
+                    value: settings.maskSensitiveInfo,
+                    icon: Icons.visibility_off_outlined,
+                    onChanged: (value) {
+                      repository.updateSettings(
+                        repository.settings.copyWith(maskSensitiveInfo: value),
+                      );
+                      setSheetState(() {});
+                    },
+                  ),
+                  _SecuritySwitch(
+                    title: l.encryptedDbTitle,
+                    subtitle: l.encryptedDbSubtitle,
+                    value: settings.localDbEncryption,
+                    icon: Icons.enhanced_encryption_outlined,
+                    onChanged: (value) {
+                      repository.updateSettings(
+                        repository.settings.copyWith(localDbEncryption: value),
+                      );
+                      setSheetState(() {});
+                    },
+                  ),
+                  _SecuritySwitch(
+                    title: l.appLockTitle,
+                    subtitle: l.appLockSubtitle,
+                    value: settings.appLockEnabled,
+                    icon: Icons.fingerprint,
+                    onChanged: (value) {
+                      repository.updateSettings(
+                        repository.settings.copyWith(appLockEnabled: value),
+                      );
+                      setSheetState(() {});
+                    },
+                  ),
+                  const SizedBox(height: 8),
+                  Card(
+                    child: ListTile(
+                      leading: const Icon(Icons.save_alt_outlined),
+                      title: Text(l.savedLocally),
+                      subtitle: Text(l.savedLocallyDescription),
+                      trailing: const Icon(Icons.check_circle),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }

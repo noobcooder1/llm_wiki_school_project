@@ -8,18 +8,19 @@ Flutter implementation of the PRD for a local-first app that saves AI conversati
 - Title/body/tag search
 - Automatic keyword tags
 - Code snippet extraction from fenced or inline code
-- Prompt capture with mock AI response
+- Prompt capture with OpenAI Responses API fallback states
 - Sensitive information masking for API keys, emails, and card-like numbers
+- Encrypted local persistence for conversations, tags, and security settings
 - Markdown export with project metadata, tags, messages, and code snippets
 - Codex Desktop session export to Obsidian Markdown notes
 - Security controls for app lock, encrypted local DB readiness, API key storage, and future E2EE sync
 
 ## PRD Mapping
 
-- `conversations/messages/tags`: represented by the in-app repository model in `lib/main.dart`
-- SQLite and SQLCipher: modeled as the next persistence boundary
+- `conversations/messages/tags`: represented by the in-app repository model and persisted as an encrypted local snapshot
+- SQLite and SQLCipher: preserved as the production-scale migration boundary
 - Secure Storage: represented by the API key security flow
-- OpenAI SDK: represented by the capture flow, currently using a mock response
+- OpenAI API: represented by the capture flow using the Responses API when a user key is saved
 - 두 번째 개발 단계 Obsidian Sync and 세 번째 개발 단계 AI Memory Graph: left as roadmap-ready extension points
 
 ## Run
