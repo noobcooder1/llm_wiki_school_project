@@ -65,6 +65,18 @@ class LlmWikiApp extends StatelessWidget {
 
 enum AiRole { user, assistant }
 
+enum AiProvider {
+  gemini('gemini', 'Gemini'),
+  openAi('openai', 'GPT / OpenAI'),
+  anthropic('anthropic', 'Claude'),
+  xAi('xai', 'Grok');
+
+  const AiProvider(this.id, this.label);
+
+  final String id;
+  final String label;
+}
+
 enum AppLanguage {
   ko('ko', '한국어'),
   en('en', 'English'),
@@ -74,6 +86,15 @@ enum AppLanguage {
 
   final String code;
   final String label;
+}
+
+extension AiProviderStorage on AiProvider {
+  static AiProvider fromId(String? id) {
+    return AiProvider.values.firstWhere(
+      (provider) => provider.id == id,
+      orElse: () => AiProvider.gemini,
+    );
+  }
 }
 
 extension AiRoleStorage on AiRole {
@@ -178,6 +199,11 @@ class AppText {
     en: 'Enter a project name',
     ja: 'プロジェクト名を入力してください',
   );
+  String get createProjectFirst => pick(
+    ko: '먼저 프로젝트를 만들어주세요',
+    en: 'Create a project first',
+    ja: '先にプロジェクトを作成してください',
+  );
   String get openRecentChats =>
       pick(ko: '최근 채팅 열기', en: 'Open recent chats', ja: '最近のチャットを開く');
   String get messageOptions =>
@@ -213,10 +239,10 @@ class AppText {
     en: 'Saved "$title"',
     ja: '「$title」を保存しました',
   );
-  String get missingApiKeyAssistant => pick(
-    ko: 'OpenAI API 키가 아직 저장되어 있지 않아 실제 답변을 생성하지 못했습니다. 설정 화면에서 API 키를 저장한 뒤 다시 질문하면 AI 답변과 함께 대화가 저장됩니다.',
-    en: 'No OpenAI API key is saved yet, so I could not generate a real answer. Save your API key in Settings, then ask again to store the AI response with the conversation.',
-    ja: 'OpenAI APIキーがまだ保存されていないため、実際の回答を生成できませんでした。設定画面でAPIキーを保存してから再度質問すると、AI応答と一緒に会話が保存されます。',
+  String missingApiKeyAssistant(AiProvider provider) => pick(
+    ko: '${provider.label} API 키가 아직 저장되어 있지 않아 실제 답변을 생성하지 못했습니다. 설정 화면에서 API 키를 저장한 뒤 다시 질문하면 AI 답변과 함께 대화가 저장됩니다.',
+    en: 'No ${provider.label} API key is saved yet, so I could not generate a real answer. Save your API key in Settings, then ask again to store the AI response with the conversation.',
+    ja: '${provider.label} APIキーがまだ保存されていないため、実際の回答を生成できませんでした。設定画面でAPIキーを保存してから再度質問すると、AI応答と一緒に会話が保存されます。',
   );
   String aiErrorAssistant(String detail) => pick(
     ko: 'AI 답변 생성에 실패했습니다. 프롬프트는 저장했지만 응답은 가져오지 못했습니다.\n\n오류: $detail',
@@ -254,8 +280,13 @@ class AppText {
       pick(ko: '모든 프로젝트', en: 'All projects', ja: 'すべてのプロジェクト');
   String get copyMarkdown =>
       pick(ko: '마크다운 복사', en: 'Copy Markdown', ja: 'Markdownをコピー');
-  String get apiKey =>
-      pick(ko: 'OpenAI API 키', en: 'OpenAI API key', ja: 'OpenAI APIキー');
+  String apiKey(AiProvider provider) => pick(
+    ko: '${provider.label} API 키',
+    en: '${provider.label} API key',
+    ja: '${provider.label} APIキー',
+  );
+  String get aiProvider =>
+      pick(ko: 'AI 제공자', en: 'AI provider', ja: 'AIプロバイダー');
   String get apiKeySaved => pick(
     ko: '보안 저장소에 키가 저장됨',
     en: 'Key saved in secure storage',
@@ -264,17 +295,36 @@ class AppText {
   String get saveApiKey =>
       pick(ko: 'API 키 저장', en: 'Save API key', ja: 'APIキーを保存');
   String get apiKeyMarked => pick(
-    ko: 'API 키를 보안 저장 대상으로 표시했습니다',
-    en: 'API key marked for secure storage',
-    ja: 'APIキーを安全な保存対象として設定しました',
+    ko: 'API 키를 보안 저장소에 추가했습니다',
+    en: 'API key added to secure storage',
+    ja: 'APIキーを安全な保存先に追加しました',
   );
+  String get registeredApiKeys =>
+      pick(ko: '등록된 API 키', en: 'Saved API keys', ja: '保存済みAPIキー');
+  String get noRegisteredApiKeys =>
+      pick(ko: '아직 등록된 키가 없습니다', en: 'No saved keys yet', ja: '保存済みキーはまだありません');
+  String get apiKeyMaskedNotice => pick(
+    ko: '보안을 위해 키는 일부만 표시됩니다.',
+    en: 'Keys are partially masked for safety.',
+    ja: '安全のためキーは一部のみ表示されます。',
+  );
+  String get activeApiKey => pick(ko: '사용 중', en: 'Active', ja: '使用中');
+  String get addNewApiKey =>
+      pick(ko: '새 API 키 추가', en: 'Add new API key', ja: '新しいAPIキーを追加');
+  String get apiKeySelected => pick(
+    ko: '사용할 API 키를 변경했습니다',
+    en: 'Active API key changed',
+    ja: '使用するAPIキーを変更しました',
+  );
+  String get apiKeyDeleted =>
+      pick(ko: 'API 키를 삭제했습니다', en: 'API key deleted', ja: 'APIキーを削除しました');
   String get enterKeyFirst =>
       pick(ko: '먼저 키를 입력하세요', en: 'Enter a key first', ja: '先にキーを入力してください');
   String get settingsTitle => pick(ko: '설정', en: 'Settings', ja: '設定');
   String get settingsDescription => pick(
-    ko: '언어, API 키, 암호화 저장소, 앱 잠금, 마스킹을 관리합니다.',
-    en: 'Manage language, API keys, encrypted storage, app lock, and masking.',
-    ja: '言語、APIキー、暗号化ストレージ、アプリロック、マスキングを管理します。',
+    ko: '언어, AI 제공자, API 키, 암호화 저장소, 앱 잠금, 마스킹을 관리합니다.',
+    en: 'Manage language, AI provider, API keys, encrypted storage, app lock, and masking.',
+    ja: '言語、AIプロバイダー、APIキー、暗号化ストレージ、アプリロック、マスキングを管理します。',
   );
   String get languageLabel => pick(ko: '언어', en: 'Language', ja: '言語');
   String get languageDescription => pick(
@@ -424,18 +474,118 @@ class CaptureResult {
   final CaptureSaveResult result;
 }
 
+String _wikiAssistantInstructions(AppLanguage language) {
+  final l = AppText.of(language);
+  return l.pick(
+    ko: '너는 LLM Wiki 앱 안에서 사용자의 AI 대화를 지식으로 정리하는 도우미야. 한국어로 자연스럽고 실용적으로 답변해. 필요한 경우 핵심 요약과 다음 행동을 짧게 제안해.',
+    en: 'You are an assistant inside LLM Wiki that helps turn AI conversations into reusable knowledge. Answer naturally and practically in English. When useful, include a short summary and next actions.',
+    ja: 'あなたはLLM Wikiアプリ内で、AI会話を再利用可能な知識に整理するアシスタントです。日本語で自然かつ実用的に答えてください。必要に応じて短い要約と次の行動を提案してください。',
+  );
+}
+
+String? _extractResponsesApiText(dynamic decoded) {
+  if (decoded is! Map<String, dynamic>) {
+    return null;
+  }
+  final direct = decoded['output_text'];
+  if (direct is String && direct.trim().isNotEmpty) {
+    return direct;
+  }
+
+  final chunks = <String>[];
+  final output = decoded['output'];
+  if (output is List) {
+    for (final item in output) {
+      if (item is! Map<String, dynamic>) {
+        continue;
+      }
+      final content = item['content'];
+      if (content is List) {
+        for (final part in content) {
+          if (part is Map<String, dynamic>) {
+            final text = part['text'];
+            if (text is String && text.trim().isNotEmpty) {
+              chunks.add(text);
+            }
+          }
+        }
+      }
+    }
+  }
+  return chunks.isEmpty ? null : chunks.join('\n');
+}
+
+class AiProviderException implements Exception {
+  const AiProviderException(this.message, {this.statusCode, this.model});
+
+  final String message;
+  final int? statusCode;
+  final String? model;
+
+  @override
+  String toString() {
+    final modelText = model == null ? '' : ' [$model]';
+    return '$modelText$message';
+  }
+}
+
+bool _canRetryWithFallback(Object error) {
+  if (error is! AiProviderException) {
+    return false;
+  }
+  final statusCode = error.statusCode;
+  if (statusCode == 404 || statusCode == 429) {
+    return true;
+  }
+  if (statusCode == 400 || statusCode == 403) {
+    final message = error.message.toLowerCase();
+    return message.contains('model') ||
+        message.contains('not found') ||
+        message.contains('permission') ||
+        message.contains('access') ||
+        message.contains('quota') ||
+        message.contains('rate limit');
+  }
+  return false;
+}
+
 class OpenAiClient {
   OpenAiClient({http.Client? httpClient})
     : _httpClient = httpClient ?? http.Client();
 
   final http.Client _httpClient;
+  static const _models = ['gpt-5.4-nano', 'gpt-5.4-mini'];
 
   Future<String> generateAnswer({
     required String apiKey,
     required String prompt,
     required AppLanguage language,
   }) async {
-    final l = AppText.of(language);
+    Object? lastError;
+    for (final model in _models) {
+      try {
+        return await _generateWithModel(
+          apiKey: apiKey,
+          prompt: prompt,
+          language: language,
+          model: model,
+        );
+      } catch (error) {
+        lastError = error;
+        if (!_canRetryWithFallback(error)) {
+          rethrow;
+        }
+      }
+    }
+    throw lastError ?? Exception('OpenAI API failed.');
+  }
+
+  Future<String> _generateWithModel({
+    required String apiKey,
+    required String prompt,
+    required AppLanguage language,
+    required String model,
+  }) async {
     final response = await _httpClient.post(
       Uri.parse('https://api.openai.com/v1/responses'),
       headers: {
@@ -443,12 +593,8 @@ class OpenAiClient {
         'Content-Type': 'application/json',
       },
       body: jsonEncode({
-        'model': 'gpt-4.1-mini',
-        'instructions': l.pick(
-          ko: '너는 LLM Wiki 앱 안에서 사용자의 AI 대화를 지식으로 정리하는 도우미야. 한국어로 자연스럽고 실용적으로 답변해. 필요한 경우 핵심 요약과 다음 행동을 짧게 제안해.',
-          en: 'You are an assistant inside LLM Wiki that helps turn AI conversations into reusable knowledge. Answer naturally and practically in English. When useful, include a short summary and next actions.',
-          ja: 'あなたはLLM Wikiアプリ内で、AI会話を再利用可能な知識に整理するアシスタントです。日本語で自然かつ実用的に答えてください。必要に応じて短い要約と次の行動を提案してください。',
-        ),
+        'model': model,
+        'instructions': _wikiAssistantInstructions(language),
         'input': prompt,
       }),
     );
@@ -460,12 +606,97 @@ class OpenAiClient {
                 ? decoded['error']['message']?.toString()
                 : decoded['error']?.toString()
           : null;
-      throw Exception(message ?? 'OpenAI API ${response.statusCode}');
+      throw AiProviderException(
+        message ?? 'OpenAI API ${response.statusCode}',
+        statusCode: response.statusCode,
+        model: model,
+      );
+    }
+
+    final outputText = _extractResponsesApiText(decoded);
+    if (outputText == null || outputText.trim().isEmpty) {
+      throw Exception('OpenAI response did not include output text.');
+    }
+    return outputText.trim();
+  }
+}
+
+class GeminiClient {
+  GeminiClient({http.Client? httpClient})
+    : _httpClient = httpClient ?? http.Client();
+
+  final http.Client _httpClient;
+  static const _models = ['gemini-2.5-flash-lite', 'gemini-2.5-flash'];
+
+  Future<String> generateAnswer({
+    required String apiKey,
+    required String prompt,
+    required AppLanguage language,
+  }) async {
+    Object? lastError;
+    for (final model in _models) {
+      try {
+        return await _generateWithModel(
+          apiKey: apiKey,
+          prompt: prompt,
+          language: language,
+          model: model,
+        );
+      } catch (error) {
+        lastError = error;
+        if (!_canRetryWithFallback(error)) {
+          rethrow;
+        }
+      }
+    }
+    throw lastError ?? Exception('Gemini API failed.');
+  }
+
+  Future<String> _generateWithModel({
+    required String apiKey,
+    required String prompt,
+    required AppLanguage language,
+    required String model,
+  }) async {
+    final response = await _httpClient.post(
+      Uri.parse(
+        'https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent',
+      ),
+      headers: {'x-goog-api-key': apiKey, 'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'systemInstruction': {
+          'parts': [
+            {'text': _wikiAssistantInstructions(language)},
+          ],
+        },
+        'contents': [
+          {
+            'role': 'user',
+            'parts': [
+              {'text': prompt},
+            ],
+          },
+        ],
+      }),
+    );
+
+    final decoded = jsonDecode(utf8.decode(response.bodyBytes));
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      final message = decoded is Map<String, dynamic>
+          ? decoded['error'] is Map<String, dynamic>
+                ? decoded['error']['message']?.toString()
+                : decoded['error']?.toString()
+          : null;
+      throw AiProviderException(
+        _geminiReadableError(message, response.statusCode),
+        statusCode: response.statusCode,
+        model: model,
+      );
     }
 
     final outputText = _extractOutputText(decoded);
     if (outputText == null || outputText.trim().isEmpty) {
-      throw Exception('OpenAI response did not include output text.');
+      throw Exception('Gemini response did not include output text.');
     }
     return outputText.trim();
   }
@@ -474,32 +705,187 @@ class OpenAiClient {
     if (decoded is! Map<String, dynamic>) {
       return null;
     }
-    final direct = decoded['output_text'];
-    if (direct is String && direct.trim().isNotEmpty) {
-      return direct;
+    final candidates = decoded['candidates'];
+    if (candidates is! List || candidates.isEmpty) {
+      return null;
     }
-
     final chunks = <String>[];
-    final output = decoded['output'];
-    if (output is List) {
-      for (final item in output) {
-        if (item is! Map<String, dynamic>) {
-          continue;
-        }
-        final content = item['content'];
-        if (content is List) {
-          for (final part in content) {
-            if (part is Map<String, dynamic>) {
-              final text = part['text'];
-              if (text is String && text.trim().isNotEmpty) {
-                chunks.add(text);
-              }
-            }
+    for (final candidate in candidates) {
+      if (candidate is! Map<String, dynamic>) {
+        continue;
+      }
+      final content = candidate['content'];
+      if (content is! Map<String, dynamic>) {
+        continue;
+      }
+      final parts = content['parts'];
+      if (parts is! List) {
+        continue;
+      }
+      for (final part in parts) {
+        if (part is Map<String, dynamic>) {
+          final text = part['text'];
+          if (text is String && text.trim().isNotEmpty) {
+            chunks.add(text);
           }
         }
       }
     }
     return chunks.isEmpty ? null : chunks.join('\n');
+  }
+
+  String _geminiReadableError(String? message, int statusCode) {
+    final normalized = message?.trim();
+    if (statusCode == 403) {
+      return [
+        'Gemini API 키는 앱에서 정상적으로 읽었지만 Google 프로젝트 권한이 거절되었습니다.',
+        'Google AI Studio에서 이 키가 연결된 프로젝트의 Gemini API 사용 권한, 결제/할당량, 키 제한을 확인해 주세요.',
+        if (normalized != null && normalized.isNotEmpty) '원본 오류: $normalized',
+      ].join('\n');
+    }
+    return normalized == null || normalized.isEmpty
+        ? 'Gemini API $statusCode'
+        : normalized;
+  }
+}
+
+class AnthropicClient {
+  AnthropicClient({http.Client? httpClient})
+    : _httpClient = httpClient ?? http.Client();
+
+  final http.Client _httpClient;
+  static const _models = ['claude-haiku-4-5', 'claude-sonnet-4-6'];
+
+  Future<String> generateAnswer({
+    required String apiKey,
+    required String prompt,
+    required AppLanguage language,
+  }) async {
+    Object? lastError;
+    for (final model in _models) {
+      try {
+        return await _generateWithModel(
+          apiKey: apiKey,
+          prompt: prompt,
+          language: language,
+          model: model,
+        );
+      } catch (error) {
+        lastError = error;
+        if (!_canRetryWithFallback(error)) {
+          rethrow;
+        }
+      }
+    }
+    throw lastError ?? Exception('Claude API failed.');
+  }
+
+  Future<String> _generateWithModel({
+    required String apiKey,
+    required String prompt,
+    required AppLanguage language,
+    required String model,
+  }) async {
+    final response = await _httpClient.post(
+      Uri.parse('https://api.anthropic.com/v1/messages'),
+      headers: {
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'model': model,
+        'max_tokens': 1024,
+        'system': _wikiAssistantInstructions(language),
+        'messages': [
+          {'role': 'user', 'content': prompt},
+        ],
+      }),
+    );
+
+    final decoded = jsonDecode(utf8.decode(response.bodyBytes));
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      final message = decoded is Map<String, dynamic>
+          ? decoded['error'] is Map<String, dynamic>
+                ? decoded['error']['message']?.toString()
+                : decoded['error']?.toString()
+          : null;
+      throw AiProviderException(
+        message ?? 'Claude API ${response.statusCode}',
+        statusCode: response.statusCode,
+        model: model,
+      );
+    }
+
+    final outputText = _extractOutputText(decoded);
+    if (outputText == null || outputText.trim().isEmpty) {
+      throw Exception('Claude response did not include output text.');
+    }
+    return outputText.trim();
+  }
+
+  String? _extractOutputText(dynamic decoded) {
+    if (decoded is! Map<String, dynamic>) {
+      return null;
+    }
+    final content = decoded['content'];
+    if (content is! List || content.isEmpty) {
+      return null;
+    }
+    final chunks = <String>[];
+    for (final block in content) {
+      if (block is Map<String, dynamic>) {
+        final text = block['text'];
+        if (text is String && text.trim().isNotEmpty) {
+          chunks.add(text);
+        }
+      }
+    }
+    return chunks.isEmpty ? null : chunks.join('\n');
+  }
+}
+
+class XAiClient {
+  XAiClient({http.Client? httpClient})
+    : _httpClient = httpClient ?? http.Client();
+
+  final http.Client _httpClient;
+
+  Future<String> generateAnswer({
+    required String apiKey,
+    required String prompt,
+    required AppLanguage language,
+  }) async {
+    final response = await _httpClient.post(
+      Uri.parse('https://api.x.ai/v1/responses'),
+      headers: {
+        'Authorization': 'Bearer $apiKey',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'model': 'grok-4.3',
+        'input': [
+          {'role': 'system', 'content': _wikiAssistantInstructions(language)},
+          {'role': 'user', 'content': prompt},
+        ],
+      }),
+    );
+
+    final decoded = jsonDecode(utf8.decode(response.bodyBytes));
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      final message = decoded is Map<String, dynamic>
+          ? decoded['error'] is Map<String, dynamic>
+                ? decoded['error']['message']?.toString()
+                : decoded['error']?.toString()
+          : null;
+      throw Exception(message ?? 'Grok API ${response.statusCode}');
+    }
+
+    final outputText = _extractResponsesApiText(decoded);
+    if (outputText == null || outputText.trim().isEmpty) {
+      throw Exception('Grok response did not include output text.');
+    }
+    return outputText.trim();
   }
 }
 
@@ -532,6 +918,12 @@ class Conversation {
       'sqlite': 'sqlite',
       'sqlcipher': 'sqlcipher',
       'openai': 'openai',
+      'gemini': 'gemini',
+      'gpt': 'gpt',
+      'claude': 'claude',
+      'anthropic': 'anthropic',
+      'grok': 'grok',
+      'xai': 'xai',
       'api key': 'api-key',
       'markdown': 'markdown',
       'obsidian': 'obsidian',
@@ -634,6 +1026,8 @@ class SecuritySettings {
     required this.localDbEncryption,
     required this.e2eeCloudSync,
     required this.apiKeySaved,
+    this.aiProvider = AiProvider.gemini,
+    this.activeApiKeyIds = const {},
     this.language = AppLanguage.ko,
   });
 
@@ -642,6 +1036,8 @@ class SecuritySettings {
   final bool localDbEncryption;
   final bool e2eeCloudSync;
   final bool apiKeySaved;
+  final AiProvider aiProvider;
+  final Map<String, String> activeApiKeyIds;
   final AppLanguage language;
 
   SecuritySettings copyWith({
@@ -650,6 +1046,8 @@ class SecuritySettings {
     bool? localDbEncryption,
     bool? e2eeCloudSync,
     bool? apiKeySaved,
+    AiProvider? aiProvider,
+    Map<String, String>? activeApiKeyIds,
     AppLanguage? language,
   }) {
     return SecuritySettings(
@@ -658,6 +1056,8 @@ class SecuritySettings {
       localDbEncryption: localDbEncryption ?? this.localDbEncryption,
       e2eeCloudSync: e2eeCloudSync ?? this.e2eeCloudSync,
       apiKeySaved: apiKeySaved ?? this.apiKeySaved,
+      aiProvider: aiProvider ?? this.aiProvider,
+      activeApiKeyIds: activeApiKeyIds ?? this.activeApiKeyIds,
       language: language ?? this.language,
     );
   }
@@ -668,6 +1068,8 @@ class SecuritySettings {
       'appLockEnabled': appLockEnabled,
       'localDbEncryption': localDbEncryption,
       'e2eeCloudSync': e2eeCloudSync,
+      'aiProvider': aiProvider.id,
+      'activeApiKeyIds': activeApiKeyIds,
       'language': language.code,
     };
   }
@@ -682,7 +1084,52 @@ class SecuritySettings {
       localDbEncryption: json['localDbEncryption'] != false,
       e2eeCloudSync: json['e2eeCloudSync'] == true,
       apiKeySaved: apiKeySaved,
+      aiProvider: AiProviderStorage.fromId(json['aiProvider']?.toString()),
+      activeApiKeyIds: _stringMapFromJson(json['activeApiKeyIds']),
       language: AppLanguageStorage.fromCode(json['language']?.toString()),
+    );
+  }
+}
+
+class ApiKeyEntry {
+  const ApiKeyEntry({
+    required this.id,
+    required this.label,
+    required this.value,
+    required this.createdAt,
+  });
+
+  final String id;
+  final String label;
+  final String value;
+  final DateTime createdAt;
+
+  String get maskedValue {
+    final clean = value.trim();
+    if (clean.length <= 8) {
+      return '••••';
+    }
+    final prefix = clean.substring(0, clean.length >= 6 ? 6 : clean.length);
+    final suffix = clean.substring(clean.length - 4);
+    return '$prefix••••$suffix';
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'label': label,
+      'value': value,
+      'createdAt': createdAt.toIso8601String(),
+    };
+  }
+
+  static ApiKeyEntry fromJson(Map<String, dynamic> json) {
+    final now = DateTime.now();
+    return ApiKeyEntry(
+      id: json['id']?.toString() ?? 'key-${now.microsecondsSinceEpoch}',
+      label: json['label']?.toString() ?? 'API key',
+      value: json['value']?.toString() ?? '',
+      createdAt: DateTime.tryParse(json['createdAt']?.toString() ?? '') ?? now,
     );
   }
 }
@@ -706,6 +1153,13 @@ List<String> _stringListFromJson(dynamic value) {
   return value.map((item) => item.toString()).toList();
 }
 
+Map<String, String> _stringMapFromJson(dynamic value) {
+  if (value is! Map) {
+    return const {};
+  }
+  return value.map((key, item) => MapEntry(key.toString(), item.toString()));
+}
+
 class WikiRepository extends ChangeNotifier {
   WikiRepository()
     : settings = const SecuritySettings(
@@ -719,20 +1173,37 @@ class WikiRepository extends ChangeNotifier {
     conversations = _seedConversations();
   }
 
-  static const _apiKeyStorageKey = 'openai_api_key';
+  static const _legacyOpenAiApiKeyStorageKey = 'openai_api_key';
   static const _appStateStorageKey = 'llm_wiki_app_state_v1';
+  static const _legacySeedProjectIds = {'mobile', 'research', 'security'};
+  static const _legacySeedConversationIds = {
+    'conv-seed-1',
+    'conv-seed-2',
+    'conv-seed-3',
+  };
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
   final OpenAiClient _openAiClient = OpenAiClient();
+  final GeminiClient _geminiClient = GeminiClient();
+  final AnthropicClient _anthropicClient = AnthropicClient();
+  final XAiClient _xAiClient = XAiClient();
 
   late List<ProjectSpace> projects;
   late List<Conversation> conversations;
+  Map<AiProvider, List<ApiKeyEntry>> apiKeys = {
+    for (final provider in AiProvider.values) provider: const [],
+  };
   SecuritySettings settings;
   bool isInitialized = false;
 
   ProjectSpace projectById(String id) {
     return projects.firstWhere(
       (project) => project.id == id,
-      orElse: () => projects.first,
+      orElse: () => ProjectSpace(
+        id: id,
+        name: id,
+        description: '',
+        color: const Color(0xFF6B7280),
+      ),
     );
   }
 
@@ -797,16 +1268,142 @@ class WikiRepository extends ChangeNotifier {
   }
 
   Future<void> initialize() async {
-    final apiKeySaved = await _loadApiKeySaved();
-    final snapshot = await _readPersistedSnapshot(apiKeySaved: apiKeySaved);
+    final snapshot = await _readPersistedSnapshot();
     if (snapshot != null) {
       settings = snapshot.settings;
       projects = snapshot.projects;
       conversations = snapshot.conversations;
-    } else if (apiKeySaved != settings.apiKeySaved) {
-      settings = settings.copyWith(apiKeySaved: apiKeySaved);
+      unawaited(_persistSnapshot());
     }
+    await _refreshApiKeys();
+    settings = _settingsWithValidActiveApiKeys(
+      settings,
+    ).copyWith(apiKeySaved: _hasApiKey(settings.aiProvider));
+    unawaited(_persistSnapshot());
     isInitialized = true;
+    notifyListeners();
+  }
+
+  List<ApiKeyEntry> apiKeysFor(AiProvider provider) {
+    return List.unmodifiable(apiKeys[provider] ?? const []);
+  }
+
+  String? activeApiKeyIdFor(AiProvider provider) {
+    final activeId = settings.activeApiKeyIds[provider.id];
+    if (activeId != null &&
+        (apiKeys[provider] ?? const []).any((entry) => entry.id == activeId)) {
+      return activeId;
+    }
+    final entries = apiKeys[provider] ?? const [];
+    return entries.isEmpty ? null : entries.first.id;
+  }
+
+  bool _hasApiKey(AiProvider provider) {
+    return activeApiKeyIdFor(provider) != null;
+  }
+
+  Future<void> _refreshApiKeys() async {
+    for (final provider in AiProvider.values) {
+      apiKeys = {...apiKeys, provider: await _loadApiKeyEntries(provider)};
+    }
+  }
+
+  Future<List<ApiKeyEntry>> _loadApiKeyEntries(AiProvider provider) async {
+    try {
+      final entries = <ApiKeyEntry>[];
+      final raw = await _secureStorage.read(
+        key: _apiKeyRingStorageKey(provider),
+      );
+      if (raw != null && raw.trim().isNotEmpty) {
+        final decoded = jsonDecode(raw);
+        if (decoded is List) {
+          entries.addAll(
+            decoded
+                .whereType<Map>()
+                .map(
+                  (item) =>
+                      ApiKeyEntry.fromJson(Map<String, dynamic>.from(item)),
+                )
+                .where((entry) => entry.value.trim().isNotEmpty),
+          );
+        }
+      }
+
+      final legacyKey = await _secureStorage.read(
+        key: _apiKeyStorageKey(provider),
+      );
+      if (legacyKey != null &&
+          legacyKey.trim().isNotEmpty &&
+          !entries.any((entry) => entry.value == legacyKey.trim())) {
+        entries.add(
+          ApiKeyEntry(
+            id: '${provider.id}-legacy',
+            label: '${provider.label} 키 ${entries.length + 1}',
+            value: legacyKey.trim(),
+            createdAt: DateTime.now(),
+          ),
+        );
+        await _persistApiKeys(provider, entries);
+      }
+
+      return entries;
+    } on MissingPluginException {
+      return const [];
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  SecuritySettings _settingsWithValidActiveApiKeys(SecuritySettings current) {
+    final activeIds = Map<String, String>.from(current.activeApiKeyIds);
+    for (final provider in AiProvider.values) {
+      final entries = apiKeys[provider] ?? const [];
+      final activeId = activeIds[provider.id];
+      if (activeId == null || !entries.any((entry) => entry.id == activeId)) {
+        if (entries.isEmpty) {
+          activeIds.remove(provider.id);
+        } else {
+          activeIds[provider.id] = entries.first.id;
+        }
+      }
+    }
+    return current.copyWith(activeApiKeyIds: activeIds);
+  }
+
+  SecuritySettings _settingsWithSelectedApiKey(
+    AiProvider provider,
+    String? apiKeyId, {
+    SecuritySettings? base,
+  }) {
+    final activeIds = Map<String, String>.from(
+      (base ?? settings).activeApiKeyIds,
+    );
+    if (apiKeyId == null) {
+      activeIds.remove(provider.id);
+    } else {
+      activeIds[provider.id] = apiKeyId;
+    }
+    final next = (base ?? settings).copyWith(activeApiKeyIds: activeIds);
+    return _settingsWithValidActiveApiKeys(next);
+  }
+
+  Future<void> _persistApiKeys(
+    AiProvider provider,
+    List<ApiKeyEntry> entries,
+  ) async {
+    await _secureStorage.write(
+      key: _apiKeyRingStorageKey(provider),
+      value: jsonEncode(entries.map((entry) => entry.toJson()).toList()),
+    );
+  }
+
+  Future<void> selectApiKey(AiProvider provider, String apiKeyId) async {
+    if (!(apiKeys[provider] ?? const []).any((entry) => entry.id == apiKeyId)) {
+      return;
+    }
+    settings = settings.copyWith(aiProvider: provider, apiKeySaved: true);
+    settings = _settingsWithSelectedApiKey(provider, apiKeyId);
+    await _persistSnapshot();
     notifyListeners();
   }
 
@@ -814,39 +1411,89 @@ class WikiRepository extends ChangeNotifier {
     await initialize();
   }
 
-  Future<bool> _loadApiKeySaved() async {
-    try {
-      final apiKey = await _secureStorage.read(key: _apiKeyStorageKey);
-      return apiKey != null && apiKey.trim().isNotEmpty;
-    } on MissingPluginException {
-      return false;
-    } catch (_) {
-      return false;
-    }
-  }
-
   Future<bool> saveApiKey(String apiKey) async {
     final trimmed = apiKey.trim();
     if (trimmed.isEmpty) {
       return false;
     }
-    await _secureStorage.write(key: _apiKeyStorageKey, value: trimmed);
-    settings = settings.copyWith(apiKeySaved: true);
+    final provider = settings.aiProvider;
+    final entries = [...apiKeysFor(provider)];
+    final existing = entries
+        .where((entry) => entry.value.trim() == trimmed)
+        .firstOrNull;
+    final selected =
+        existing ??
+        ApiKeyEntry(
+          id: '${provider.id}-key-${DateTime.now().microsecondsSinceEpoch}',
+          label: '${provider.label} 키 ${entries.length + 1}',
+          value: trimmed,
+          createdAt: DateTime.now(),
+        );
+    if (existing == null) {
+      entries.add(selected);
+      apiKeys = {...apiKeys, provider: entries};
+      await _persistApiKeys(provider, entries);
+    }
+    settings = _settingsWithSelectedApiKey(
+      provider,
+      selected.id,
+      base: settings.copyWith(apiKeySaved: true),
+    );
     await _persistSnapshot();
     notifyListeners();
     return true;
   }
 
+  Future<void> deleteApiKey(AiProvider provider, String apiKeyId) async {
+    final entries = apiKeysFor(
+      provider,
+    ).where((entry) => entry.id != apiKeyId).toList();
+    apiKeys = {...apiKeys, provider: entries};
+    await _persistApiKeys(provider, entries);
+    final nextActiveId = entries.isEmpty ? null : entries.first.id;
+    settings = _settingsWithSelectedApiKey(
+      provider,
+      nextActiveId,
+      base: settings.copyWith(
+        apiKeySaved: provider == settings.aiProvider
+            ? nextActiveId != null
+            : settings.apiKeySaved,
+      ),
+    );
+    await _persistSnapshot();
+    notifyListeners();
+  }
+
   Future<String?> _readApiKey() async {
-    try {
-      final apiKey = await _secureStorage.read(key: _apiKeyStorageKey);
-      if (apiKey == null || apiKey.trim().isEmpty) {
-        return null;
-      }
-      return apiKey.trim();
-    } on MissingPluginException {
+    final provider = settings.aiProvider;
+    var entries = apiKeys[provider] ?? const [];
+    if (entries.isEmpty) {
+      await _refreshApiKeys();
+      entries = apiKeys[provider] ?? const [];
+    }
+    final activeId = activeApiKeyIdFor(provider);
+    if (activeId == null) {
       return null;
     }
+    return entries
+        .where((entry) => entry.id == activeId)
+        .map((entry) => entry.value.trim())
+        .firstOrNull;
+  }
+
+  Future<void> updateAiProvider(AiProvider provider) async {
+    await _refreshApiKeys();
+    final selectedId = activeApiKeyIdFor(provider);
+    settings = _settingsWithSelectedApiKey(
+      provider,
+      selectedId,
+      base: settings.copyWith(
+        aiProvider: provider,
+        apiKeySaved: selectedId != null,
+      ),
+    );
+    await _persistSnapshot();
+    notifyListeners();
   }
 
   Future<CaptureResult> createConversation({
@@ -864,14 +1511,31 @@ class WikiRepository extends ChangeNotifier {
     final apiKey = await _readApiKey();
     if (apiKey == null) {
       result = CaptureSaveResult.missingApiKey;
-      assistantReply = l.missingApiKeyAssistant;
+      assistantReply = l.missingApiKeyAssistant(settings.aiProvider);
     } else {
       try {
-        assistantReply = await _openAiClient.generateAnswer(
-          apiKey: apiKey,
-          prompt: sanitizedPrompt,
-          language: settings.language,
-        );
+        assistantReply = switch (settings.aiProvider) {
+          AiProvider.openAi => await _openAiClient.generateAnswer(
+            apiKey: apiKey,
+            prompt: sanitizedPrompt,
+            language: settings.language,
+          ),
+          AiProvider.gemini => await _geminiClient.generateAnswer(
+            apiKey: apiKey,
+            prompt: sanitizedPrompt,
+            language: settings.language,
+          ),
+          AiProvider.anthropic => await _anthropicClient.generateAnswer(
+            apiKey: apiKey,
+            prompt: sanitizedPrompt,
+            language: settings.language,
+          ),
+          AiProvider.xAi => await _xAiClient.generateAnswer(
+            apiKey: apiKey,
+            prompt: sanitizedPrompt,
+            language: settings.language,
+          ),
+        };
       } catch (error) {
         result = CaptureSaveResult.apiError;
         assistantReply = l.aiErrorAssistant(_readableError(error));
@@ -932,9 +1596,7 @@ class WikiRepository extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<_PersistedSnapshot?> _readPersistedSnapshot({
-    required bool apiKeySaved,
-  }) async {
+  Future<_PersistedSnapshot?> _readPersistedSnapshot() async {
     try {
       final raw = await _secureStorage.read(key: _appStateStorageKey);
       if (raw == null || raw.trim().isEmpty) {
@@ -949,8 +1611,8 @@ class WikiRepository extends ChangeNotifier {
       final projectsJson = decoded['projects'];
       final conversationsJson = decoded['conversations'];
       final restoredSettings = settingsJson is Map<String, dynamic>
-          ? SecuritySettings.fromJson(settingsJson, apiKeySaved: apiKeySaved)
-          : settings.copyWith(apiKeySaved: apiKeySaved);
+          ? SecuritySettings.fromJson(settingsJson, apiKeySaved: false)
+          : settings.copyWith(apiKeySaved: false);
       final restoredProjects = projectsJson is List
           ? projectsJson
                 .whereType<Map>()
@@ -959,6 +1621,7 @@ class WikiRepository extends ChangeNotifier {
                       ProjectSpace.fromJson(Map<String, dynamic>.from(project)),
                 )
                 .where((project) => project.id.trim().isNotEmpty)
+                .where((project) => !_legacySeedProjectIds.contains(project.id))
                 .toList()
           : <ProjectSpace>[];
       final restoredConversations = conversationsJson is List
@@ -970,13 +1633,19 @@ class WikiRepository extends ChangeNotifier {
                   ),
                 )
                 .where((conversation) => conversation.messages.isNotEmpty)
+                .where(
+                  (conversation) =>
+                      !_legacySeedConversationIds.contains(conversation.id),
+                )
+                .where(
+                  (conversation) =>
+                      !_legacySeedProjectIds.contains(conversation.projectId),
+                )
                 .toList()
           : <Conversation>[];
       return _PersistedSnapshot(
         settings: restoredSettings,
-        projects: restoredProjects.isEmpty
-            ? _defaultProjects()
-            : restoredProjects,
+        projects: restoredProjects,
         conversations: restoredConversations,
       );
     } on MissingPluginException {
@@ -1006,6 +1675,19 @@ class WikiRepository extends ChangeNotifier {
     } catch (_) {
       return;
     }
+  }
+
+  String _apiKeyStorageKey(AiProvider provider) {
+    return switch (provider) {
+      AiProvider.openAi => _legacyOpenAiApiKeyStorageKey,
+      AiProvider.gemini => 'gemini_api_key',
+      AiProvider.anthropic => 'anthropic_api_key',
+      AiProvider.xAi => 'xai_api_key',
+    };
+  }
+
+  String _apiKeyRingStorageKey(AiProvider provider) {
+    return '${provider.id}_api_key_ring_v1';
   }
 
   String exportMarkdown({String projectId = 'all'}) {
@@ -1089,101 +1771,11 @@ class WikiRepository extends ChangeNotifier {
   }
 
   List<Conversation> _seedConversations() {
-    final now = DateTime.now();
-    return [
-      Conversation(
-        id: 'conv-seed-1',
-        projectId: 'mobile',
-        title: 'AI 대화 저장용 SQLite 스키마',
-        createdAt: now.subtract(const Duration(days: 4, hours: 3)),
-        updatedAt: now.subtract(const Duration(days: 4, hours: 2)),
-        manualTags: const ['schema', 'local-first'],
-        messages: [
-          KnowledgeMessage(
-            id: 'msg-1',
-            role: AiRole.user,
-            createdAt: now.subtract(const Duration(days: 4, hours: 3)),
-            content: 'conversations, messages, tags를 위한 로컬 SQLite 구조를 설계해줘.',
-          ),
-          KnowledgeMessage(
-            id: 'msg-2',
-            role: AiRole.assistant,
-            createdAt: now.subtract(const Duration(days: 4, hours: 2)),
-            content:
-                'conversations는 프로젝트 단위 대화 기록, messages는 순서가 있는 대화 턴, tags는 다대다 검색 인덱스로 분리하는 것이 좋습니다. SQLCipher로 DB 파일을 암호화하고, 암호화 키는 Secure Storage에 보관합니다.',
-          ),
-        ],
-      ),
-      Conversation(
-        id: 'conv-seed-2',
-        projectId: 'security',
-        title: 'API 키 보관 체크리스트',
-        createdAt: now.subtract(const Duration(days: 2, hours: 8)),
-        updatedAt: now.subtract(const Duration(days: 2, hours: 7)),
-        manualTags: const ['keychain', 'privacy'],
-        messages: [
-          KnowledgeMessage(
-            id: 'msg-3',
-            role: AiRole.user,
-            createdAt: now.subtract(const Duration(days: 2, hours: 8)),
-            content: '사용자의 OpenAI API 키가 유출되지 않게 앱에서 무엇을 해야 할까?',
-          ),
-          KnowledgeMessage(
-            id: 'msg-4',
-            role: AiRole.assistant,
-            createdAt: now.subtract(const Duration(days: 2, hours: 7)),
-            content:
-                '사용자 API 키를 제품 서버로 보내지 않아야 합니다. 키는 iOS Keychain 또는 Android Keystore에 저장하고, provider 직접 요청에는 HTTPS/TLS를 사용하며, 앱 잠금과 민감정보 마스킹 옵션을 제공합니다.',
-          ),
-        ],
-      ),
-      Conversation(
-        id: 'conv-seed-3',
-        projectId: 'research',
-        title: '마크다운 내보내기 형식',
-        createdAt: now.subtract(const Duration(hours: 20)),
-        updatedAt: now.subtract(const Duration(hours: 18)),
-        manualTags: const ['export', 'obsidian'],
-        messages: [
-          KnowledgeMessage(
-            id: 'msg-5',
-            role: AiRole.user,
-            createdAt: now.subtract(const Duration(hours: 20)),
-            content: '대화를 내보내기 위한 마크다운 템플릿을 만들어줘.',
-          ),
-          KnowledgeMessage(
-            id: 'msg-6',
-            role: AiRole.assistant,
-            createdAt: now.subtract(const Duration(hours: 18)),
-            content:
-                '유용한 내보내기에는 프로젝트, 태그, 생성일, 역할별 대화 턴, 추출된 코드가 포함되어야 합니다. 예시:\n\n```markdown\n## 대화 제목\n- 프로젝트: 리서치\n- 태그: #search #memory\n\n### 사용자\n프롬프트 내용\n```',
-          ),
-        ],
-      ),
-    ];
+    return const [];
   }
 
   List<ProjectSpace> _defaultProjects() {
-    return const [
-      ProjectSpace(
-        id: 'mobile',
-        name: 'Mobile App',
-        description: 'Flutter, local-first storage, release notes',
-        color: Color(0xFF176B5D),
-      ),
-      ProjectSpace(
-        id: 'research',
-        name: 'Research',
-        description: 'AI memory, search, knowledge graph ideas',
-        color: Color(0xFF8C4A2F),
-      ),
-      ProjectSpace(
-        id: 'security',
-        name: 'Security',
-        description: 'Keychain, SQLCipher, privacy controls',
-        color: Color(0xFF5B628A),
-      ),
-    ];
+    return const [];
   }
 
   String _projectIdFromName(String name, DateTime now) {
@@ -1833,7 +2425,7 @@ class ChatCapturePage extends StatefulWidget {
 }
 
 class _ChatCapturePageState extends State<ChatCapturePage> {
-  late String projectId = widget.repository.projects.first.id;
+  String? projectId;
   final TextEditingController promptController = TextEditingController();
   Conversation? activeConversation;
   bool isSaving = false;
@@ -1896,6 +2488,14 @@ class _ChatCapturePageState extends State<ChatCapturePage> {
 
   Future<void> _savePrompt() async {
     final prompt = promptController.text.trim();
+    if (projectId == null) {
+      final l = AppText.of(widget.repository.settings.language);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l.createProjectFirst)));
+      await _openCreateProjectDialog();
+      return;
+    }
     if (prompt.isEmpty) {
       final l = AppText.of(widget.repository.settings.language);
       ScaffoldMessenger.of(
@@ -1909,7 +2509,7 @@ class _ChatCapturePageState extends State<ChatCapturePage> {
     });
     try {
       final result = await widget.repository.createConversation(
-        projectId: projectId,
+        projectId: projectId!,
         prompt: prompt,
       );
       if (!mounted) {
@@ -1943,7 +2543,10 @@ class _ChatCapturePageState extends State<ChatCapturePage> {
     });
   }
 
-  void _selectProject(String value) {
+  void _selectProject(String? value) {
+    if (value == null) {
+      return;
+    }
     final projectChats = widget.repository.search(
       query: '',
       projectId: value,
@@ -1963,15 +2566,20 @@ class _ChatCapturePageState extends State<ChatCapturePage> {
       builder: (context) {
         final conversations = widget.repository.search(
           query: '',
-          projectId: projectId,
+          projectId: projectId ?? 'all',
           selectedTags: const <String>{},
         );
+        final selectedProject = projectId == null
+            ? null
+            : widget.repository.projectById(projectId!);
         return SafeArea(
           child: ListView(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
             children: [
               Text(
-                '${l.recentCaptures} · ${l.projectName(widget.repository.projectById(projectId).id, widget.repository.projectById(projectId).name)}',
+                selectedProject == null
+                    ? l.recentCaptures
+                    : '${l.recentCaptures} · ${l.projectName(selectedProject.id, selectedProject.name)}',
                 style: Theme.of(context).textTheme.titleLarge,
               ),
               const SizedBox(height: 12),
@@ -2071,8 +2679,6 @@ class _ChatCapturePageState extends State<ChatCapturePage> {
         );
       },
     );
-    nameController.dispose();
-    descriptionController.dispose();
     if (project == null || !mounted) {
       return;
     }
@@ -2096,7 +2702,7 @@ class _ChatTopBar extends StatelessWidget {
   static const String _newProjectMenuValue = '__new_project__';
 
   final WikiRepository repository;
-  final String projectId;
+  final String? projectId;
   final VoidCallback onOpenRecentChats;
   final VoidCallback onNewChat;
   final VoidCallback onCreateProject;
@@ -2416,7 +3022,7 @@ class _ChatComposer extends StatelessWidget {
   final bool isSaving;
   final WikiRepository repository;
   final AppLanguage language;
-  final String projectId;
+  final String? projectId;
   final ValueChanged<String> onProjectSelected;
   final VoidCallback onCreateProject;
   final VoidCallback onSubmit;
@@ -2769,12 +3375,76 @@ class _SecurityPageState extends State<SecurityPage> {
           ),
         ),
         const SizedBox(height: 16),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.hub_outlined),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        l.aiProvider,
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                DropdownMenu<AiProvider>(
+                  key: const Key('ai-provider-menu'),
+                  width: double.infinity,
+                  initialSelection: settings.aiProvider,
+                  label: Text(l.aiProvider),
+                  onSelected: (provider) async {
+                    if (provider == null) {
+                      return;
+                    }
+                    await widget.repository.updateAiProvider(provider);
+                    if (mounted) {
+                      setState(() {});
+                    }
+                  },
+                  dropdownMenuEntries: AiProvider.values
+                      .map(
+                        (provider) => DropdownMenuEntry<AiProvider>(
+                          value: provider,
+                          label: provider.label,
+                        ),
+                      )
+                      .toList(),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        _ApiKeyListCard(
+          repository: widget.repository,
+          provider: settings.aiProvider,
+          language: settings.language,
+          onChanged: () {
+            setState(() {});
+          },
+        ),
+        const SizedBox(height: 16),
         TextField(
+          key: const Key('api-key-field'),
           controller: apiKeyController,
           obscureText: true,
           decoration: InputDecoration(
-            labelText: l.apiKey,
-            hintText: settings.apiKeySaved ? l.apiKeySaved : 'sk-...',
+            labelText: '${l.addNewApiKey} · ${l.apiKey(settings.aiProvider)}',
+            hintText: settings.apiKeySaved
+                ? l.apiKeySaved
+                : switch (settings.aiProvider) {
+                    AiProvider.gemini => 'AIza...',
+                    AiProvider.openAi => 'sk-...',
+                    AiProvider.anthropic => 'sk-ant-...',
+                    AiProvider.xAi => 'xai-...',
+                  },
             prefixIcon: const Icon(Icons.key_outlined),
             suffixIcon: IconButton(
               tooltip: l.saveApiKey,
@@ -2864,6 +3534,112 @@ class _SecurityPageState extends State<SecurityPage> {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _ApiKeyListCard extends StatelessWidget {
+  const _ApiKeyListCard({
+    required this.repository,
+    required this.provider,
+    required this.language,
+    required this.onChanged,
+  });
+
+  final WikiRepository repository;
+  final AiProvider provider;
+  final AppLanguage language;
+  final VoidCallback onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppText.of(language);
+    final entries = repository.apiKeysFor(provider);
+    final activeId = repository.activeApiKeyIdFor(provider);
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.vpn_key_outlined),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    l.registeredApiKeys,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              l.apiKeyMaskedNotice,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            const SizedBox(height: 10),
+            if (entries.isEmpty)
+              Text(l.noRegisteredApiKeys)
+            else
+              ...entries.map((entry) {
+                final isActive = entry.id == activeId;
+                return ListTile(
+                  key: Key('api-key-option-${entry.id}'),
+                  contentPadding: EdgeInsets.zero,
+                  leading: Icon(
+                    isActive
+                        ? Icons.radio_button_checked
+                        : Icons.radio_button_unchecked,
+                    color: isActive
+                        ? Theme.of(context).colorScheme.primary
+                        : null,
+                  ),
+                  title: Row(
+                    children: [
+                      Expanded(child: Text(entry.label)),
+                      if (isActive)
+                        Text(
+                          l.activeApiKey,
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.primary,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                    ],
+                  ),
+                  subtitle: Text(entry.maskedValue),
+                  trailing: IconButton(
+                    tooltip: l.apiKeyDeleted,
+                    icon: const Icon(Icons.delete_outline),
+                    onPressed: () async {
+                      await repository.deleteApiKey(provider, entry.id);
+                      if (!context.mounted) {
+                        return;
+                      }
+                      ScaffoldMessenger.of(
+                        context,
+                      ).showSnackBar(SnackBar(content: Text(l.apiKeyDeleted)));
+                      onChanged();
+                    },
+                  ),
+                  onTap: () async {
+                    await repository.selectApiKey(provider, entry.id);
+                    if (!context.mounted) {
+                      return;
+                    }
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(SnackBar(content: Text(l.apiKeySelected)));
+                    onChanged();
+                  },
+                );
+              }),
+          ],
+        ),
+      ),
     );
   }
 }
