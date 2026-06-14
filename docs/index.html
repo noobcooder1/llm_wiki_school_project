@@ -231,7 +231,9 @@
 
       .feature-grid,
       .decision-grid,
-      .roadmap {
+      .roadmap,
+      .process-grid,
+      .detail-grid {
         display: grid;
         gap: 14px;
       }
@@ -244,14 +246,26 @@
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
 
+      .process-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+
+      .detail-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
       .feature,
-      .decision {
+      .decision,
+      .process-step,
+      .detail-card {
         padding: 18px;
       }
 
       .feature b,
       .decision b,
-      .roadmap-item b {
+      .roadmap-item b,
+      .process-step b,
+      .detail-card b {
         display: block;
         font-size: 20px;
         margin-bottom: 8px;
@@ -259,10 +273,111 @@
 
       .feature span,
       .decision span,
-      .roadmap-item span {
+      .roadmap-item span,
+      .process-step span,
+      .detail-card span {
         color: var(--muted);
         font-size: 18px;
         line-height: 1.55;
+      }
+
+      .process-step,
+      .detail-card {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--surface);
+      }
+
+      .process-step {
+        min-height: 210px;
+      }
+
+      .step-number {
+        display: inline-grid;
+        place-items: center;
+        width: 32px;
+        height: 32px;
+        margin-bottom: 14px;
+        border-radius: 50%;
+        background: var(--green);
+        color: #fff;
+        font-weight: 800;
+      }
+
+      .detail-card.accent-green {
+        border-top: 6px solid var(--green);
+      }
+
+      .detail-card.accent-rust {
+        border-top: 6px solid var(--rust);
+      }
+
+      .detail-card.accent-blue {
+        border-top: 6px solid var(--blue);
+      }
+
+      .detail-card.accent-gold {
+        border-top: 6px solid var(--gold);
+      }
+
+      .flow-note {
+        margin-top: 18px;
+        padding: 18px 20px;
+        border-radius: 8px;
+        background: #eef3ef;
+        color: #2f3d35;
+        font-size: 19px;
+        line-height: 1.6;
+      }
+
+      .mock-panel {
+        width: min(430px, 88vw);
+        padding: 22px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--surface);
+        box-shadow: 0 24px 62px rgb(24 32 28 / 14%);
+      }
+
+      .mock-row {
+        display: grid;
+        grid-template-columns: 120px minmax(0, 1fr);
+        gap: 12px;
+        padding: 12px 0;
+        border-bottom: 1px solid var(--line);
+        font-size: 18px;
+      }
+
+      .mock-row:last-child {
+        border-bottom: 0;
+      }
+
+      .mock-row strong {
+        color: var(--ink);
+      }
+
+      .mock-row span {
+        color: var(--muted);
+        line-height: 1.45;
+      }
+
+      .provider-strip {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 16px;
+      }
+
+      .provider-pill {
+        display: inline-flex;
+        align-items: center;
+        min-height: 38px;
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: #eef6f3;
+        color: var(--green);
+        font-size: 16px;
+        font-weight: 800;
       }
 
       .decision:nth-child(1) {
@@ -361,7 +476,9 @@
 
         .feature-grid,
         .decision-grid,
-        .roadmap {
+        .roadmap,
+        .process-grid,
+        .detail-grid {
           grid-template-columns: 1fr;
         }
 
@@ -381,6 +498,10 @@
       <a href="#slide-5">5</a>
       <a href="#slide-6">6</a>
       <a href="#slide-7">7</a>
+      <a href="#slide-8">8</a>
+      <a href="#slide-9">9</a>
+      <a href="#slide-10">10</a>
+      <a href="#slide-11">11</a>
     </nav>
     <main class="deck">
       <section class="slide" id="slide-1">
@@ -395,6 +516,7 @@
             <a class="button primary" href="LLM_Wiki_Mobile_PRD.docx">PRD 보기</a>
             <a class="button" href="adr/ADR-001.md">ADR 보기</a>
             <a class="button" href="LLM_Wiki_WBS_Gantt.xlsx">WBS 보기</a>
+            <a class="button" href="presentation-script.md">대본 보기</a>
             <a class="button" href="LLM_Wiki_Demo_30s.mp4">데모 영상</a>
             <a class="button" href="codex-obsidian-sync.md">Obsidian Sync</a>
           </div>
@@ -409,25 +531,25 @@
             <div class="metric-grid">
               <div class="metric"><strong>3</strong><span>Projects</span></div>
               <div class="metric"><strong>12</strong><span>Chats</span></div>
-              <div class="metric"><strong>28</strong><span>Tags</span></div>
-              <div class="metric"><strong>7</strong><span>Code</span></div>
+              <div class="metric"><strong>4</strong><span>Providers</span></div>
+              <div class="metric"><strong>3</strong><span>Languages</span></div>
             </div>
             <div class="search">Search title, body, or tag</div>
             <div class="mini-card">
               <span>Mobile App</span>
-              <strong>SQLite 로컬 저장 구조</strong>
+              <strong>AI 응답 저장 흐름</strong>
               <div class="tag-row">
-                <span class="tag">#sqlite</span>
+                <span class="tag">#provider</span>
+                <span class="tag">#api-key</span>
                 <span class="tag">#local-first</span>
-                <span class="tag">#security</span>
               </div>
             </div>
             <div class="mini-card">
               <span>Security</span>
-              <strong>API 키 보관 정책</strong>
+              <strong>키 마스킹과 보안 저장</strong>
               <div class="tag-row">
-                <span class="tag">#byok</span>
                 <span class="tag">#keychain</span>
+                <span class="tag">#masking</span>
               </div>
             </div>
           </div>
@@ -452,31 +574,31 @@
       <section class="slide single" id="slide-3">
         <div>
           <div class="eyebrow">Core Features</div>
-          <h2>첫 번째 개발 단계는 저장, 분류, 검색, 내보내기에 집중한다</h2>
+          <h2>현재 앱은 AI 대화를 저장 가능한 지식으로 바꾸는 흐름을 구현했다</h2>
           <div class="feature-grid">
             <div class="feature">
-              <b>AI 채팅 저장</b>
-              <span>대화와 메시지를 프로젝트 단위로 저장하고 다시 열람한다.</span>
+              <b>AI 채팅 생성</b>
+              <span>사용자 메시지를 선택한 AI 제공자에게 보내고 응답까지 함께 저장한다.</span>
+            </div>
+            <div class="feature">
+              <b>Provider / API 키 관리</b>
+              <span>Gemini, GPT, Claude, Grok 키를 저장하고 사용할 키를 선택한다.</span>
+            </div>
+            <div class="feature">
+              <b>프로젝트 기반 라이브러리</b>
+              <span>대화를 프로젝트 단위로 묶고 이름 변경, 이동, 삭제, 복원을 지원한다.</span>
             </div>
             <div class="feature">
               <b>자동 태그 생성</b>
-              <span>본문 키워드를 기반으로 검색 가능한 태그를 생성한다.</span>
+              <span>프롬프트와 응답에서 주제어를 뽑아 검색 가능한 태그로 만든다.</span>
             </div>
             <div class="feature">
-              <b>코드 스니펫 추출</b>
-              <span>대화 속 코드 블록을 별도로 모아 재사용성을 높인다.</span>
+              <b>검색과 코드 추출</b>
+              <span>제목, 본문, 태그 검색과 대화 속 코드 스니펫 추출을 제공한다.</span>
             </div>
             <div class="feature">
-              <b>제목/본문/태그 검색</b>
-              <span>로컬 데이터에서 빠르게 필요한 대화를 찾는다.</span>
-            </div>
-            <div class="feature">
-              <b>마크다운 내보내기</b>
-              <span>Obsidian, Git, 문서 도구로 지식을 이동한다.</span>
-            </div>
-            <div class="feature">
-              <b>보안 설정</b>
-              <span>마스킹, 앱 잠금, 암호화 저장을 중심으로 설계한다.</span>
+              <b>마크다운 / Obsidian</b>
+              <span>프로젝트 정보, 태그, 메시지, 코드 블록을 마크다운으로 내보낸다.</span>
             </div>
           </div>
         </div>
@@ -489,11 +611,11 @@
           <div class="decision-grid">
             <div class="decision">
               <b>로컬 우선 구조</b>
-              <span>대화 로그를 서버에 저장하지 않고 디바이스에 먼저 저장한다.</span>
+              <span>대화와 설정을 기기 보안 저장소의 로컬 스냅샷으로 먼저 복원한다.</span>
             </div>
             <div class="decision">
               <b>사용자 API 키 직접 사용</b>
-              <span>운영 비용과 서버 경유 위험을 줄이고 사용자 통제권을 높인다.</span>
+              <span>서버 프록시 없이 사용자가 Provider와 키를 직접 선택하게 한다.</span>
             </div>
             <div class="decision">
               <b>마크다운 내보내기</b>
@@ -515,18 +637,149 @@
 
       <section class="slide" id="slide-5">
         <div>
-          <div class="eyebrow">Security Model</div>
-          <h2>보안은 기능이 아니라 제품 신뢰의 전제다</h2>
+          <div class="eyebrow">Implemented Flow</div>
+          <h2>AI 채팅은 질문, 응답, 태그를 하나의 지식 단위로 저장한다</h2>
           <p>
-            API 키 평문 저장 금지, 사용자 대화 로그 서버 저장 금지, Secure
-            Storage, SQLCipher, 민감정보 자동 마스킹, 앱 잠금, 향후 E2EE
-            동기화를 기본 설계 기준으로 둔다.
+            사용자가 프로젝트를 선택하고 메시지를 보내면 앱은 민감정보를 먼저
+            마스킹한 뒤 선택된 Provider에 요청한다. 응답이 오면 사용자 메시지와
+            AI 답변을 한 대화로 묶고, 제목과 태그를 생성해 로컬에 저장한다.
+          </p>
+          <div class="flow-note">
+            API 키가 없거나 호출이 실패해도 프롬프트는 사라지지 않는다. 앱은
+            안내 메시지 또는 오류 내용을 함께 저장해 사용자가 원인을 확인할 수 있게 한다.
+          </div>
+        </div>
+        <div class="visual">
+          <div class="mock-panel">
+            <div class="mock-row"><strong>1. 입력</strong><span>프로젝트 선택 후 한국어 메시지 작성</span></div>
+            <div class="mock-row"><strong>2. 보호</strong><span>API 키, 이메일, 카드 번호 형태 자동 마스킹</span></div>
+            <div class="mock-row"><strong>3. 호출</strong><span>활성 Provider와 API 키로 AI 응답 생성</span></div>
+            <div class="mock-row"><strong>4. 저장</strong><span>프롬프트, 응답, 태그, 코드 스니펫을 Conversation으로 저장</span></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="slide single" id="slide-6">
+        <div>
+          <div class="eyebrow">Provider & API Keys</div>
+          <h2>하나의 앱에서 여러 AI 제공자와 여러 API 키를 관리한다</h2>
+          <div class="detail-grid">
+            <div class="detail-card accent-green">
+              <b>Provider 선택</b>
+              <span>Gemini, GPT / OpenAI, Claude, Grok 중 사용할 AI 제공자를 설정 화면에서 선택한다.</span>
+            </div>
+            <div class="detail-card accent-rust">
+              <b>API 키 링</b>
+              <span>Provider별로 여러 키를 저장하고, 현재 사용할 활성 키를 선택하거나 삭제할 수 있다.</span>
+            </div>
+            <div class="detail-card accent-blue">
+              <b>보안 표시</b>
+              <span>키는 입력 시 숨김 처리되고, 등록 후에는 앞뒤 일부만 보이는 마스킹 형태로 표시된다.</span>
+            </div>
+            <div class="detail-card accent-gold">
+              <b>Fallback 처리</b>
+              <span>모델 접근 오류나 할당량 오류가 발생하면 Provider별 후보 모델을 순차적으로 시도한다.</span>
+            </div>
+          </div>
+          <div class="provider-strip">
+            <span class="provider-pill">Gemini</span>
+            <span class="provider-pill">GPT / OpenAI</span>
+            <span class="provider-pill">Claude</span>
+            <span class="provider-pill">Grok</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="slide" id="slide-7">
+        <div>
+          <div class="eyebrow">Knowledge Library</div>
+          <h2>저장된 대화는 프로젝트별 라이브러리에서 다시 관리된다</h2>
+          <p>
+            라이브러리에서는 전체 대화와 프로젝트별 대화를 검색할 수 있고,
+            제목, 본문, 태그를 기준으로 원하는 지식을 찾는다. 저장 후에도
+            대화 제목 변경, 프로젝트 이동, 태그 추가, 삭제와 복원이 가능하다.
           </p>
           <div class="chips">
-            <span class="chip">Keychain / Keystore</span>
-            <span class="chip">SQLCipher</span>
-            <span class="chip">Local-first</span>
-            <span class="chip">E2EE-ready</span>
+            <span class="chip">제목/본문/태그 검색</span>
+            <span class="chip">수동 태그 추가</span>
+            <span class="chip">대화 이동</span>
+            <span class="chip">휴지통 복원</span>
+          </div>
+        </div>
+        <div class="visual">
+          <div class="phone">
+            <div class="phone-bar"></div>
+            <div class="app-title">
+              <span>라이브러리</span>
+              <span>⌕</span>
+            </div>
+            <div class="search">API 키 보안 검색</div>
+            <div class="mini-card">
+              <span>모바일 앱 · now</span>
+              <strong>Provider별 API 키 저장 방식</strong>
+              <div class="tag-row">
+                <span class="tag">#api-key</span>
+                <span class="tag">#security</span>
+                <span class="tag">#provider</span>
+              </div>
+            </div>
+            <div class="mini-card">
+              <span>삭제 항목</span>
+              <strong>휴지통에서 프로젝트와 대화 복원</strong>
+              <div class="tag-row">
+                <span class="tag">#trash</span>
+                <span class="tag">#restore</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="slide single" id="slide-8">
+        <div>
+          <div class="eyebrow">Export & Obsidian</div>
+          <h2>지식은 앱 안에 갇히지 않고 마크다운으로 이동한다</h2>
+          <div class="process-grid">
+            <div class="process-step">
+              <span class="step-number">1</span>
+              <b>범위 선택</b>
+              <span>모든 프로젝트 또는 특정 프로젝트만 골라 내보낼 수 있다.</span>
+            </div>
+            <div class="process-step">
+              <span class="step-number">2</span>
+              <b>구조화</b>
+              <span>프로젝트, 생성일, 태그, 사용자 메시지와 AI 응답을 구분한다.</span>
+            </div>
+            <div class="process-step">
+              <span class="step-number">3</span>
+              <b>코드 보존</b>
+              <span>대화 속 fenced code와 inline code를 코드 스니펫으로 다시 정리한다.</span>
+            </div>
+            <div class="process-step">
+              <span class="step-number">4</span>
+              <b>외부 활용</b>
+              <span>Obsidian, Git, 문서 도구에서 장기 지식으로 재사용한다.</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="slide" id="slide-9">
+        <div>
+          <div class="eyebrow">Security Model</div>
+          <h2>보안과 언어 설정은 사용자가 통제하는 방식으로 설계했다</h2>
+          <p>
+            앱은 한국어를 기본 언어로 사용하고, 설정에서 영어와 일본어로
+            전환할 수 있다. 보안 측면에서는 API 키를 보안 저장소에 분리하고,
+            대화와 설정은 로컬 스냅샷으로 복원한다. SQLCipher 전환, 앱 잠금,
+            E2EE 동기화는 확장 가능한 구현 경계로 남겨두었다.
+          </p>
+          <div class="chips">
+            <span class="chip">한국어 기본값</span>
+            <span class="chip">English / 日本語</span>
+            <span class="chip">Secure Storage</span>
+            <span class="chip">민감정보 마스킹</span>
+            <span class="chip">SQLCipher-ready</span>
           </div>
         </div>
         <div class="quote">
@@ -534,41 +787,45 @@
         </div>
       </section>
 
-      <section class="slide single" id="slide-6">
+      <section class="slide single" id="slide-10">
         <div>
-          <div class="eyebrow">Development Plan</div>
-          <h2>저장과 검색에서 지식 그래프로 확장한다</h2>
+          <div class="eyebrow">Updated WBS</div>
+          <h2>현재 작업 범위는 구현 완료 기능과 발표 준비 단계로 재정리했다</h2>
           <div class="roadmap">
             <div class="roadmap-item">
               <span class="number">1</span>
-              <b>첫 번째 개발 단계: 저장 및 검색</b>
-              <span>로컬 DB, 프로젝트 분류, 태그, 코드 추출, 마크다운 내보내기.</span>
+              <b>완료된 구현 범위</b>
+              <span>Provider 연동, API 키 링, AI 채팅 저장, 검색, 태그, 휴지통, 내보내기.</span>
             </div>
             <div class="roadmap-item">
               <span class="number">2</span>
-              <b>두 번째 개발 단계: Obsidian 동기화</b>
-              <span>Vault 동기화, provider 확장, 백업/복원 경험 강화.</span>
+              <b>진행 중인 발표 준비</b>
+              <span>구현 기능 상세 슬라이드, 4분 30초 대본, WBS 최신화, 최종 리허설.</span>
             </div>
             <div class="roadmap-item">
               <span class="number">3</span>
-              <b>세 번째 개발 단계: AI 기억 그래프</b>
-              <span>대화와 지식 노드의 관계를 연결해 장기 기억 시스템으로 확장.</span>
+              <b>다음 확장 방향</b>
+              <span>SQLCipher 테이블 전환, 실제 생체 인증, E2EE 동기화, AI 기억 그래프.</span>
             </div>
+          </div>
+          <div class="actions" style="margin-top: 18px">
+            <a class="button primary" href="LLM_Wiki_WBS_Gantt.xlsx">업데이트된 WBS 보기</a>
           </div>
         </div>
       </section>
 
-      <section class="slide" id="slide-7">
+      <section class="slide" id="slide-11">
         <div>
           <div class="eyebrow">Closing</div>
-          <h2>LLM Wiki는 AI 사용 기록을 나의 지식 체계로 바꾼다</h2>
+          <h2>LLM Wiki는 AI 사용 기록을 다시 쓰는 지식 체계로 바꾼다</h2>
           <p>
-            발표에서는 문제 정의, 핵심 기능, ADR 기반 기술 결정, 보안 설계,
-            개발 단계 순서로 설명하고 마지막에 앱 데모를 보여준다.
+            발표에서는 문제 정의와 기술 결정으로 시작해, 실제 구현된 AI 채팅
+            저장 흐름, Provider/API 키 관리, 라이브러리, 내보내기, 보안 구조를
+            설명한다. 마지막에는 30초 데모 영상으로 전체 사용자 경험을 보여준다.
           </p>
           <div class="actions">
-            <a class="button primary" href="LLM_Wiki_Mobile_PRD.docx">PRD 다운로드</a>
-            <a class="button" href="codex-obsidian-sync.md">Obsidian 문서</a>
+            <a class="button primary" href="LLM_Wiki_Demo_30s.mp4">데모 영상 보기</a>
+            <a class="button" href="presentation-script.md">발표 대본 보기</a>
           </div>
         </div>
         <div class="visual">
