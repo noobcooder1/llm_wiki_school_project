@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -165,6 +166,70 @@ class AppText {
   String get chats => pick(ko: '대화', en: 'Chats', ja: '会話');
   String get tags => pick(ko: '태그', en: 'Tags', ja: 'タグ');
   String get code => pick(ko: '코드', en: 'Code', ja: 'コード');
+  String get manage => pick(ko: '관리', en: 'Manage', ja: '管理');
+  String get rename => pick(ko: '이름 변경', en: 'Rename', ja: '名前を変更');
+  String get move => pick(ko: '이동', en: 'Move', ja: '移動');
+  String get delete => pick(ko: '삭제', en: 'Delete', ja: '削除');
+  String get trash => pick(ko: '휴지통', en: 'Trash', ja: 'ゴミ箱');
+  String get moveToTrash =>
+      pick(ko: '휴지통으로 이동', en: 'Move to trash', ja: 'ゴミ箱へ移動');
+  String get restore => pick(ko: '복원', en: 'Restore', ja: '復元');
+  String get deleteForever =>
+      pick(ko: '영구 삭제', en: 'Delete forever', ja: '完全に削除');
+  String get emptyTrash =>
+      pick(ko: '휴지통이 비어 있습니다', en: 'Trash is empty', ja: 'ゴミ箱は空です');
+  String get clearTrash =>
+      pick(ko: '휴지통 비우기', en: 'Empty trash', ja: 'ゴミ箱を空にする');
+  String trashItemCount(int count) => pick(
+    ko: '삭제한 항목 $count개',
+    en: '$count deleted items',
+    ja: '削除済み項目 $count件',
+  );
+  String get trashProjectSubtitle => pick(
+    ko: '프로젝트와 포함된 대화',
+    en: 'Project and included chats',
+    ja: 'プロジェクトと含まれる会話',
+  );
+  String get trashConversationSubtitle =>
+      pick(ko: '대화 1개', en: '1 chat', ja: '会話1件');
+  String get deleteForeverConfirm => pick(
+    ko: '이 항목은 복원할 수 없도록 완전히 삭제됩니다.',
+    en: 'This item will be permanently deleted and cannot be restored.',
+    ja: 'この項目は復元できないよう完全に削除されます。',
+  );
+  String get emptyTrashConfirm => pick(
+    ko: '휴지통의 모든 항목을 복원할 수 없도록 완전히 삭제할까요?',
+    en: 'Permanently delete every item in trash?',
+    ja: 'ゴミ箱のすべての項目を完全に削除しますか？',
+  );
+  String get deleteConversation =>
+      pick(ko: '대화 삭제', en: 'Delete chat', ja: '会話を削除');
+  String get deleteProject =>
+      pick(ko: '프로젝트 삭제', en: 'Delete project', ja: 'プロジェクトを削除');
+  String get projectGroups =>
+      pick(ko: '프로젝트별', en: 'By project', ja: 'プロジェクト別');
+  String get allChats => pick(ko: '전체 채팅', en: 'All chats', ja: 'すべての会話');
+  String get moveConversation =>
+      pick(ko: '프로젝트 이동', en: 'Move to project', ja: 'プロジェクトへ移動');
+  String get conversationTitle =>
+      pick(ko: '대화 제목', en: 'Chat title', ja: '会話タイトル');
+  String get deleteProjectWithChats => pick(
+    ko: '프로젝트와 포함된 대화를 휴지통으로 이동할까요?',
+    en: 'Move this project and all chats inside it to trash?',
+    ja: 'このプロジェクトと含まれる会話をゴミ箱へ移動しますか？',
+  );
+  String get deleteConversationConfirm => pick(
+    ko: '이 대화를 휴지통으로 이동할까요?',
+    en: 'Move this chat to trash?',
+    ja: 'この会話をゴミ箱へ移動しますか？',
+  );
+  String get undone => pick(ko: '되돌리기', en: 'Undo', ja: '元に戻す');
+  String get deleted => pick(ko: '삭제했습니다', en: 'Deleted', ja: '削除しました');
+  String get movedToTrash =>
+      pick(ko: '휴지통으로 이동했습니다', en: 'Moved to trash', ja: 'ゴミ箱へ移動しました');
+  String get restored => pick(ko: '복원했습니다', en: 'Restored', ja: '復元しました');
+  String get moved => pick(ko: '이동했습니다', en: 'Moved', ja: '移動しました');
+  String get renamed => pick(ko: '이름을 변경했습니다', en: 'Renamed', ja: '名前を変更しました');
   String get addTag => pick(ko: '태그 추가', en: 'Add tag', ja: 'タグを追加');
   String get extractedCode =>
       pick(ko: '추출된 코드', en: 'Extracted code', ja: '抽出コード');
@@ -206,6 +271,7 @@ class AppText {
   );
   String get openRecentChats =>
       pick(ko: '최근 채팅 열기', en: 'Open recent chats', ja: '最近のチャットを開く');
+  String get chatSearch => pick(ko: '채팅 검색', en: 'Search chats', ja: 'チャット検索');
   String get messageOptions =>
       pick(ko: '메시지 옵션', en: 'Message options', ja: 'メッセージオプション');
   String get securityControls =>
@@ -407,6 +473,15 @@ class ProjectSpace {
   final String name;
   final String description;
   final Color color;
+
+  ProjectSpace copyWith({String? name, String? description, Color? color}) {
+    return ProjectSpace(
+      id: id,
+      name: name ?? this.name,
+      description: description ?? this.description,
+      color: color ?? this.color,
+    );
+  }
 
   Map<String, dynamic> toJson() {
     return {
@@ -911,37 +986,7 @@ class Conversation {
   String get body => messages.map((message) => message.content).join('\n\n');
 
   List<String> get tags {
-    final generated = <String>{};
-    final lower = body.toLowerCase();
-    const keywordMap = {
-      'flutter': 'flutter',
-      'sqlite': 'sqlite',
-      'sqlcipher': 'sqlcipher',
-      'openai': 'openai',
-      'gemini': 'gemini',
-      'gpt': 'gpt',
-      'claude': 'claude',
-      'anthropic': 'anthropic',
-      'grok': 'grok',
-      'xai': 'xai',
-      'api key': 'api-key',
-      'markdown': 'markdown',
-      'obsidian': 'obsidian',
-      'security': 'security',
-      'encrypt': 'encryption',
-      'vector': 'semantic-search',
-      'search': 'search',
-      'code': 'code',
-      'dart': 'dart',
-      'prompt': 'prompting',
-    };
-    for (final entry in keywordMap.entries) {
-      if (lower.contains(entry.key)) {
-        generated.add(entry.value);
-      }
-    }
-    generated.addAll(manualTags);
-    return generated.toList()..sort();
+    return {..._autoTagsFromText(body), ...manualTags}.toList()..sort();
   }
 
   List<String> get codeSnippets {
@@ -967,6 +1012,7 @@ class Conversation {
   }
 
   Conversation copyWith({
+    String? projectId,
     String? title,
     List<KnowledgeMessage>? messages,
     DateTime? updatedAt,
@@ -974,7 +1020,7 @@ class Conversation {
   }) {
     return Conversation(
       id: id,
-      projectId: projectId,
+      projectId: projectId ?? this.projectId,
       title: title ?? this.title,
       messages: messages ?? this.messages,
       createdAt: createdAt,
@@ -1139,11 +1185,98 @@ class _PersistedSnapshot {
     required this.settings,
     required this.projects,
     required this.conversations,
+    required this.trashedItems,
   });
 
   final SecuritySettings settings;
   final List<ProjectSpace> projects;
   final List<Conversation> conversations;
+  final List<TrashItem> trashedItems;
+}
+
+enum TrashItemType { conversation, project }
+
+class TrashItem {
+  const TrashItem({
+    required this.id,
+    required this.type,
+    required this.deletedAt,
+    this.project,
+    this.conversation,
+    this.conversations = const [],
+  });
+
+  final String id;
+  final TrashItemType type;
+  final DateTime deletedAt;
+  final ProjectSpace? project;
+  final Conversation? conversation;
+  final List<Conversation> conversations;
+
+  String title(AppText l) {
+    return switch (type) {
+      TrashItemType.conversation => conversation?.title ?? l.chats,
+      TrashItemType.project =>
+        project == null
+            ? l.projects
+            : l.projectName(project!.id, project!.name),
+    };
+  }
+
+  int get conversationCount {
+    return switch (type) {
+      TrashItemType.conversation => conversation == null ? 0 : 1,
+      TrashItemType.project => conversations.length,
+    };
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'type': type.name,
+      'deletedAt': deletedAt.toIso8601String(),
+      'project': project?.toJson(),
+      'conversation': conversation?.toJson(),
+      'conversations': conversations
+          .map((conversation) => conversation.toJson())
+          .toList(),
+    };
+  }
+
+  static TrashItem fromJson(Map<String, dynamic> json) {
+    final type = switch (json['type']?.toString()) {
+      'project' => TrashItemType.project,
+      _ => TrashItemType.conversation,
+    };
+    final conversationsJson = json['conversations'];
+    return TrashItem(
+      id:
+          json['id']?.toString() ??
+          'trash-${DateTime.now().microsecondsSinceEpoch}',
+      type: type,
+      deletedAt:
+          DateTime.tryParse(json['deletedAt']?.toString() ?? '') ??
+          DateTime.now(),
+      project: json['project'] is Map
+          ? ProjectSpace.fromJson(Map<String, dynamic>.from(json['project']))
+          : null,
+      conversation: json['conversation'] is Map
+          ? Conversation.fromJson(
+              Map<String, dynamic>.from(json['conversation']),
+            )
+          : null,
+      conversations: conversationsJson is List
+          ? conversationsJson
+                .whereType<Map>()
+                .map(
+                  (conversation) => Conversation.fromJson(
+                    Map<String, dynamic>.from(conversation),
+                  ),
+                )
+                .toList()
+          : const [],
+    );
+  }
 }
 
 List<String> _stringListFromJson(dynamic value) {
@@ -1160,6 +1293,287 @@ Map<String, String> _stringMapFromJson(dynamic value) {
   return value.map((key, item) => MapEntry(key.toString(), item.toString()));
 }
 
+List<String> _autoTagsFromText(String text) {
+  final lower = text.toLowerCase();
+  final compact = lower.replaceAll(RegExp(r'\s+'), '');
+  final tags = <String>{};
+
+  const exactKeywords = {
+    'flutter': 'flutter',
+    '플러터': 'flutter',
+    'hot reload': 'hot-reload',
+    '핫리로드': 'hot-reload',
+    'hot restart': 'hot-restart',
+    '핫리스타트': 'hot-restart',
+    'sqlite': 'sqlite',
+    'sqlcipher': 'sqlcipher',
+    'openai': 'openai',
+    'gemini': 'gemini',
+    '제미나이': 'gemini',
+    'gpt': 'gpt',
+    '지피티': 'gpt',
+    'claude': 'claude',
+    '클로드': 'claude',
+    'anthropic': 'anthropic',
+    'grok': 'grok',
+    '그록': 'grok',
+    'xai': 'xai',
+    'api key': 'api-key',
+    'api키': 'api-key',
+    'api 키': 'api-key',
+    'markdown': 'markdown',
+    '마크다운': 'markdown',
+    'obsidian': 'obsidian',
+    '옵시디언': 'obsidian',
+    'security': 'security',
+    '보안': 'security',
+    'encrypt': 'encryption',
+    '암호화': 'encryption',
+    'vector': 'semantic-search',
+    '벡터': 'semantic-search',
+    'search': 'search',
+    '검색': 'search',
+    'code': 'code',
+    '코드': 'code',
+    'dart': 'dart',
+    'prompt': 'prompting',
+    '프롬프트': 'prompting',
+  };
+
+  for (final entry in exactKeywords.entries) {
+    final keyword = entry.key.replaceAll(' ', '');
+    if (lower.contains(entry.key) || compact.contains(keyword)) {
+      tags.add(entry.value);
+    }
+  }
+
+  const semanticGroups = <String, List<String>>{
+    '체지방': ['체지방', '지방', '살', '체중', '몸무게', '비만'],
+    '다이어트': ['다이어트', '감량', '살빼', '빼기', '체중감량', '식단', '운동', '칼로리', '대사', '지방분해'],
+    '건강': ['건강', '영양', '호르몬', '혈액순환', '신진대사', '근육'],
+    '학습': ['공부', '학습', '학교', '과제', '시험', '발표'],
+    '앱개발': ['앱', '모바일', '안드로이드', 'ios', '에뮬레이터', '위젯'],
+    '데이터저장': ['저장', '데이터베이스', '로컬', '복원', 'sqlite', 'securestorage'],
+  };
+
+  for (final entry in semanticGroups.entries) {
+    if (entry.value.any((keyword) => compact.contains(keyword.toLowerCase()))) {
+      tags.add(entry.key);
+    }
+  }
+
+  if (tags.contains('체지방') &&
+      (compact.contains('빼') ||
+          compact.contains('어렵') ||
+          compact.contains('감량') ||
+          compact.contains('운동'))) {
+    tags.add('다이어트');
+  }
+
+  tags.addAll(_genericTopicTags(text, tags));
+  return tags.toList()..sort();
+}
+
+List<String> _genericTopicTags(String text, Set<String> existingTags) {
+  final tokens = _tagTokensFromText(text);
+  final tokenScores = <String, int>{};
+  final phraseScores = <String, int>{};
+
+  for (var index = 0; index < tokens.length; index += 1) {
+    final token = tokens[index];
+    if (_isUsefulTagToken(token) && !existingTags.contains(token)) {
+      final earlyTopicBoost = index < 8 ? 2 : 0;
+      tokenScores[token] = (tokenScores[token] ?? 0) + 2 + earlyTopicBoost;
+    }
+  }
+
+  for (var index = 0; index < tokens.length - 1; index += 1) {
+    final first = tokens[index];
+    final second = tokens[index + 1];
+    if (!_isUsefulTagToken(first) || !_isUsefulTagToken(second)) {
+      continue;
+    }
+    final phrase = '$first-$second';
+    if (!existingTags.contains(phrase)) {
+      phraseScores[phrase] = (phraseScores[phrase] ?? 0) + 3;
+    }
+  }
+
+  int compareTagsByScore(MapEntry<String, int> a, MapEntry<String, int> b) {
+    final scoreCompare = b.value.compareTo(a.value);
+    if (scoreCompare != 0) {
+      return scoreCompare;
+    }
+    final lengthCompare = b.key.length.compareTo(a.key.length);
+    if (lengthCompare != 0) {
+      return lengthCompare;
+    }
+    return a.key.compareTo(b.key);
+  }
+
+  final rankedTokens = tokenScores.entries.toList()..sort(compareTagsByScore);
+  final rankedPhrases = phraseScores.entries.toList()..sort(compareTagsByScore);
+  final result = <String>[...rankedTokens.take(6).map((entry) => entry.key)];
+  for (final phrase in rankedPhrases.take(2).map((entry) => entry.key)) {
+    if (!result.contains(phrase)) {
+      result.add(phrase);
+    }
+  }
+  return result;
+}
+
+List<String> _tagTokensFromText(String text) {
+  final tokenPattern = RegExp(r'[A-Za-z][A-Za-z0-9+#.-]{2,}|[가-힣]{2,}');
+  return tokenPattern
+      .allMatches(text)
+      .map((match) => _normalizeTagToken(match.group(0) ?? ''))
+      .where((token) => token.isNotEmpty)
+      .toList();
+}
+
+String _normalizeTagToken(String raw) {
+  var token = raw.toLowerCase().trim();
+  token = token.replaceAll(
+    RegExp(r'^[^a-z0-9가-힣+#.-]+|[^a-z0-9가-힣+#.-]+$'),
+    '',
+  );
+  if (!RegExp(r'[가-힣]').hasMatch(token)) {
+    return token;
+  }
+
+  const suffixes = [
+    '입니다',
+    '합니다',
+    '해주세요',
+    '알려줘',
+    '인가요',
+    '이라는',
+    '들은',
+    '에서',
+    '으로',
+    '에게',
+    '부터',
+    '까지',
+    '처럼',
+    '보다',
+    '이라',
+    '라고',
+    '하고',
+    '이며',
+    '에는',
+    '해줘',
+    '까요',
+    '나요',
+    '은',
+    '는',
+    '이',
+    '가',
+    '을',
+    '를',
+    '의',
+    '도',
+    '만',
+    '로',
+    '에',
+    '와',
+    '과',
+    '랑',
+    '들',
+  ];
+
+  var changed = true;
+  while (changed) {
+    changed = false;
+    for (final suffix in suffixes) {
+      if (token.endsWith(suffix) && token.length - suffix.length >= 2) {
+        token = token.substring(0, token.length - suffix.length);
+        changed = true;
+        break;
+      }
+    }
+  }
+  return token;
+}
+
+bool _isUsefulTagToken(String token) {
+  if (token.length < 2 || RegExp(r'^\d+$').hasMatch(token)) {
+    return false;
+  }
+  const stopWords = {
+    'ai',
+    'api',
+    'the',
+    'and',
+    'for',
+    'with',
+    'this',
+    'that',
+    'what',
+    'how',
+    'why',
+    'when',
+    'where',
+    'please',
+    'about',
+    'answer',
+    'question',
+    'user',
+    'assistant',
+    'test',
+    'error',
+    'model',
+    '사용자',
+    '답변',
+    '질문',
+    '대화',
+    '내용',
+    '설명',
+    '방법',
+    '이유',
+    '경우',
+    '관련',
+    '관계',
+    '정도',
+    '부분',
+    '테스트',
+    '간단',
+    '무엇',
+    '뭐야',
+    '어떻게',
+    '어떤',
+    '있어',
+    '없어',
+    '가능',
+    '중요',
+    '관리',
+    '어렵',
+    '문의',
+    '추가',
+    '저장',
+    '사용',
+    '위해',
+    '대한',
+    '대해',
+    '하면',
+    '할까',
+    '하나',
+    '하나요',
+    '해주세요',
+    '알려줘',
+    '그리고',
+    '하지만',
+    '그러면',
+    '예시',
+    '정상',
+    '오류',
+    '발생',
+    '확인',
+    '요약',
+    '원인',
+  };
+  return !stopWords.contains(token);
+}
+
 class WikiRepository extends ChangeNotifier {
   WikiRepository()
     : settings = const SecuritySettings(
@@ -1171,6 +1585,7 @@ class WikiRepository extends ChangeNotifier {
       ) {
     projects = _defaultProjects();
     conversations = _seedConversations();
+    trashedItems = const [];
   }
 
   static const _legacyOpenAiApiKeyStorageKey = 'openai_api_key';
@@ -1189,6 +1604,7 @@ class WikiRepository extends ChangeNotifier {
 
   late List<ProjectSpace> projects;
   late List<Conversation> conversations;
+  late List<TrashItem> trashedItems;
   Map<AiProvider, List<ApiKeyEntry>> apiKeys = {
     for (final provider in AiProvider.values) provider: const [],
   };
@@ -1267,12 +1683,246 @@ class WikiRepository extends ChangeNotifier {
     return project;
   }
 
+  void updateProject({
+    required String projectId,
+    required String name,
+    String? description,
+  }) {
+    final cleanName = name.trim();
+    if (cleanName.isEmpty) {
+      return;
+    }
+    projects = projects.map((project) {
+      if (project.id != projectId) {
+        return project;
+      }
+      return project.copyWith(
+        name: cleanName,
+        description: description?.trim(),
+      );
+    }).toList();
+    unawaited(_persistSnapshot());
+    notifyListeners();
+  }
+
+  ({ProjectSpace project, List<Conversation> conversations})? deleteProject(
+    String projectId,
+  ) {
+    final index = projects.indexWhere((project) => project.id == projectId);
+    if (index < 0) {
+      return null;
+    }
+    final removedProject = projects[index];
+    final removedConversations = conversations
+        .where((conversation) => conversation.projectId == projectId)
+        .toList();
+    projects = [...projects.take(index), ...projects.skip(index + 1)];
+    conversations = conversations
+        .where((conversation) => conversation.projectId != projectId)
+        .toList();
+    trashedItems = [
+      TrashItem(
+        id: 'trash-project-${DateTime.now().microsecondsSinceEpoch}',
+        type: TrashItemType.project,
+        deletedAt: DateTime.now(),
+        project: removedProject,
+        conversations: removedConversations,
+      ),
+      ...trashedItems,
+    ];
+    unawaited(_persistSnapshot());
+    notifyListeners();
+    return (project: removedProject, conversations: removedConversations);
+  }
+
+  void restoreProject(
+    ProjectSpace project,
+    List<Conversation> projectConversations,
+  ) {
+    if (!projects.any((item) => item.id == project.id)) {
+      projects = [...projects, project];
+    }
+    final existingConversationIds = conversations
+        .map((item) => item.id)
+        .toSet();
+    conversations = [
+      ...projectConversations.where(
+        (conversation) => !existingConversationIds.contains(conversation.id),
+      ),
+      ...conversations,
+    ];
+    trashedItems = trashedItems.where((item) {
+      return !(item.type == TrashItemType.project &&
+          item.project?.id == project.id);
+    }).toList();
+    unawaited(_persistSnapshot());
+    notifyListeners();
+  }
+
+  void renameConversation({
+    required String conversationId,
+    required String title,
+  }) {
+    final cleanTitle = title.trim();
+    if (cleanTitle.isEmpty) {
+      return;
+    }
+    conversations = conversations.map((conversation) {
+      if (conversation.id != conversationId) {
+        return conversation;
+      }
+      return conversation.copyWith(
+        title: cleanTitle,
+        updatedAt: DateTime.now(),
+      );
+    }).toList();
+    unawaited(_persistSnapshot());
+    notifyListeners();
+  }
+
+  void moveConversation({
+    required String conversationId,
+    required String projectId,
+  }) {
+    if (!projects.any((project) => project.id == projectId)) {
+      return;
+    }
+    conversations = conversations.map((conversation) {
+      if (conversation.id != conversationId) {
+        return conversation;
+      }
+      return conversation.copyWith(
+        projectId: projectId,
+        updatedAt: DateTime.now(),
+      );
+    }).toList();
+    unawaited(_persistSnapshot());
+    notifyListeners();
+  }
+
+  Conversation? deleteConversation(String conversationId) {
+    final index = conversations.indexWhere(
+      (conversation) => conversation.id == conversationId,
+    );
+    if (index < 0) {
+      return null;
+    }
+    final removed = conversations[index];
+    conversations = [
+      ...conversations.take(index),
+      ...conversations.skip(index + 1),
+    ];
+    trashedItems = [
+      TrashItem(
+        id: 'trash-conversation-${DateTime.now().microsecondsSinceEpoch}',
+        type: TrashItemType.conversation,
+        deletedAt: DateTime.now(),
+        conversation: removed,
+      ),
+      ...trashedItems,
+    ];
+    unawaited(_persistSnapshot());
+    notifyListeners();
+    return removed;
+  }
+
+  void restoreConversation(Conversation conversation) {
+    if (conversations.any((item) => item.id == conversation.id)) {
+      return;
+    }
+    if (!projects.any((project) => project.id == conversation.projectId)) {
+      projects = [
+        ...projects,
+        ProjectSpace(
+          id: conversation.projectId,
+          name: conversation.projectId,
+          description: '',
+          color: _projectColorForIndex(projects.length),
+        ),
+      ];
+    }
+    conversations = [conversation, ...conversations];
+    trashedItems = trashedItems.where((item) {
+      return !(item.type == TrashItemType.conversation &&
+          item.conversation?.id == conversation.id);
+    }).toList();
+    unawaited(_persistSnapshot());
+    notifyListeners();
+  }
+
+  void restoreTrashItem(String trashItemId) {
+    final item = trashedItems
+        .where((trashItem) => trashItem.id == trashItemId)
+        .firstOrNull;
+    if (item == null) {
+      return;
+    }
+    switch (item.type) {
+      case TrashItemType.conversation:
+        final conversation = item.conversation;
+        if (conversation != null &&
+            !conversations.any((saved) => saved.id == conversation.id)) {
+          if (!projects.any(
+            (project) => project.id == conversation.projectId,
+          )) {
+            projects = [
+              ...projects,
+              ProjectSpace(
+                id: conversation.projectId,
+                name: conversation.projectId,
+                description: '',
+                color: _projectColorForIndex(projects.length),
+              ),
+            ];
+          }
+          conversations = [conversation, ...conversations];
+        }
+      case TrashItemType.project:
+        final project = item.project;
+        if (project != null) {
+          if (!projects.any((saved) => saved.id == project.id)) {
+            projects = [...projects, project];
+          }
+          final existingConversationIds = conversations
+              .map((conversation) => conversation.id)
+              .toSet();
+          conversations = [
+            ...item.conversations.where(
+              (conversation) =>
+                  !existingConversationIds.contains(conversation.id),
+            ),
+            ...conversations,
+          ];
+        }
+    }
+    trashedItems = trashedItems
+        .where((trashItem) => trashItem.id != trashItemId)
+        .toList();
+    unawaited(_persistSnapshot());
+    notifyListeners();
+  }
+
+  void permanentlyDeleteTrashItem(String trashItemId) {
+    trashedItems = trashedItems
+        .where((trashItem) => trashItem.id != trashItemId)
+        .toList();
+    unawaited(_persistSnapshot());
+    notifyListeners();
+  }
+
+  void emptyTrash() {
+    trashedItems = const [];
+    unawaited(_persistSnapshot());
+    notifyListeners();
+  }
+
   Future<void> initialize() async {
     final snapshot = await _readPersistedSnapshot();
     if (snapshot != null) {
       settings = snapshot.settings;
       projects = snapshot.projects;
       conversations = snapshot.conversations;
+      trashedItems = snapshot.trashedItems;
       unawaited(_persistSnapshot());
     }
     await _refreshApiKeys();
@@ -1610,6 +2260,7 @@ class WikiRepository extends ChangeNotifier {
       final settingsJson = decoded['settings'];
       final projectsJson = decoded['projects'];
       final conversationsJson = decoded['conversations'];
+      final trashJson = decoded['trash'];
       final restoredSettings = settingsJson is Map<String, dynamic>
           ? SecuritySettings.fromJson(settingsJson, apiKeySaved: false)
           : settings.copyWith(apiKeySaved: false);
@@ -1643,10 +2294,19 @@ class WikiRepository extends ChangeNotifier {
                 )
                 .toList()
           : <Conversation>[];
+      final restoredTrash = trashJson is List
+          ? trashJson
+                .whereType<Map>()
+                .map(
+                  (item) => TrashItem.fromJson(Map<String, dynamic>.from(item)),
+                )
+                .toList()
+          : <TrashItem>[];
       return _PersistedSnapshot(
         settings: restoredSettings,
         projects: restoredProjects,
         conversations: restoredConversations,
+        trashedItems: restoredTrash,
       );
     } on MissingPluginException {
       return null;
@@ -1665,6 +2325,7 @@ class WikiRepository extends ChangeNotifier {
         'conversations': conversations
             .map((conversation) => conversation.toJson())
             .toList(),
+        'trash': trashedItems.map((item) => item.toJson()).toList(),
       };
       await _secureStorage.write(
         key: _appStateStorageKey,
@@ -1800,27 +2461,7 @@ class WikiRepository extends ChangeNotifier {
   }
 
   List<String> _tagsFromPrompt(String prompt) {
-    final lower = prompt.toLowerCase();
-    final tags = <String>{};
-    const keywords = {
-      'flutter': 'flutter',
-      'sqlite': 'sqlite',
-      'openai': 'openai',
-      'api': 'api',
-      'security': 'security',
-      'markdown': 'markdown',
-      'export': 'export',
-      'search': 'search',
-      'code': 'code',
-      'obsidian': 'obsidian',
-      'memory': 'memory',
-    };
-    for (final entry in keywords.entries) {
-      if (lower.contains(entry.key)) {
-        tags.add(entry.value);
-      }
-    }
-    return tags.toList()..sort();
+    return _autoTagsFromText(prompt);
   }
 
   String _titleFromPrompt(String prompt) {
@@ -1939,8 +2580,9 @@ class LibraryPage extends StatefulWidget {
 }
 
 class _LibraryPageState extends State<LibraryPage> {
+  static const String _groupedProjectId = '__grouped__';
   final TextEditingController searchController = TextEditingController();
-  String selectedProjectId = 'all';
+  String selectedProjectId = _groupedProjectId;
   final Set<String> selectedTags = {};
 
   @override
@@ -1954,14 +2596,23 @@ class _LibraryPageState extends State<LibraryPage> {
     final l = AppText.of(widget.repository.settings.language);
     final conversations = widget.repository.search(
       query: searchController.text,
-      projectId: selectedProjectId,
+      projectId: selectedProjectId == _groupedProjectId
+          ? 'all'
+          : selectedProjectId,
       selectedTags: selectedTags,
     );
+    final isGrouped = selectedProjectId == _groupedProjectId;
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
       children: [
         _MetricStrip(repository: widget.repository),
+        const SizedBox(height: 12),
+        _TrashAccessCard(
+          count: widget.repository.trashedItems.length,
+          language: widget.repository.settings.language,
+          onTap: () => _openTrash(context),
+        ),
         const SizedBox(height: 16),
         SearchBar(
           key: const Key('library-search'),
@@ -1986,6 +2637,7 @@ class _LibraryPageState extends State<LibraryPage> {
           projects: widget.repository.projects,
           language: widget.repository.settings.language,
           selectedProjectId: selectedProjectId,
+          groupedProjectId: _groupedProjectId,
           onSelected: (projectId) {
             setState(() {
               selectedProjectId = projectId;
@@ -2023,6 +2675,8 @@ class _LibraryPageState extends State<LibraryPage> {
         const SizedBox(height: 8),
         if (conversations.isEmpty)
           _EmptyState(language: widget.repository.settings.language)
+        else if (isGrouped)
+          ..._buildProjectSections(context, conversations)
         else
           ...conversations.map(
             (conversation) => Padding(
@@ -2032,11 +2686,60 @@ class _LibraryPageState extends State<LibraryPage> {
                 project: widget.repository.projectById(conversation.projectId),
                 language: widget.repository.settings.language,
                 onTap: () => _openConversation(context, conversation),
+                onRename: () => _renameConversation(context, conversation),
+                onMove: () => _moveConversation(context, conversation),
+                onDelete: () => _deleteConversation(context, conversation),
               ),
             ),
           ),
       ],
     );
+  }
+
+  List<Widget> _buildProjectSections(
+    BuildContext context,
+    List<Conversation> conversations,
+  ) {
+    final grouped = <String, List<Conversation>>{};
+    for (final conversation in conversations) {
+      grouped.putIfAbsent(conversation.projectId, () => []).add(conversation);
+    }
+    final projectIds = grouped.keys.toList()
+      ..sort((a, b) {
+        final projectA = widget.repository.projectById(a).name;
+        final projectB = widget.repository.projectById(b).name;
+        return projectA.compareTo(projectB);
+      });
+
+    return projectIds.expand((projectId) {
+      final project = widget.repository.projectById(projectId);
+      final projectConversations = grouped[projectId] ?? const <Conversation>[];
+      return [
+        _ProjectSectionHeader(
+          project: project,
+          language: widget.repository.settings.language,
+          count: projectConversations.length,
+          onRename: () => _renameProject(context, project),
+          onDelete: () => _deleteProject(context, project),
+        ),
+        const SizedBox(height: 8),
+        ...projectConversations.map(
+          (conversation) => Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: ConversationCard(
+              conversation: conversation,
+              project: project,
+              language: widget.repository.settings.language,
+              onTap: () => _openConversation(context, conversation),
+              onRename: () => _renameConversation(context, conversation),
+              onMove: () => _moveConversation(context, conversation),
+              onDelete: () => _deleteConversation(context, conversation),
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+      ];
+    }).toList();
   }
 
   void _openConversation(BuildContext context, Conversation conversation) {
@@ -2053,10 +2756,530 @@ class _LibraryPageState extends State<LibraryPage> {
             widget.repository.addTag(conversation.id, tag);
             Navigator.pop(context);
           },
+          onRename: () {
+            Navigator.pop(context);
+            _renameConversation(context, conversation);
+          },
+          onMove: () {
+            Navigator.pop(context);
+            _moveConversation(context, conversation);
+          },
+          onDelete: () {
+            Navigator.pop(context);
+            _deleteConversation(context, conversation);
+          },
         );
       },
     );
   }
+
+  void _openTrash(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (context) {
+        return TrashSheet(
+          repository: widget.repository,
+          language: widget.repository.settings.language,
+          onChanged: () {
+            if (mounted) {
+              setState(() {});
+            }
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _renameConversation(
+    BuildContext context,
+    Conversation conversation,
+  ) async {
+    final l = AppText.of(widget.repository.settings.language);
+    final title = await _showTextEditDialog(
+      context: context,
+      title: l.rename,
+      label: l.conversationTitle,
+      initialValue: conversation.title,
+    );
+    if (title == null) {
+      return;
+    }
+    widget.repository.renameConversation(
+      conversationId: conversation.id,
+      title: title,
+    );
+    if (!context.mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(l.renamed)));
+  }
+
+  Future<void> _moveConversation(
+    BuildContext context,
+    Conversation conversation,
+  ) async {
+    final l = AppText.of(widget.repository.settings.language);
+    final projectId = await _showProjectPickerDialog(
+      context: context,
+      repository: widget.repository,
+      currentProjectId: conversation.projectId,
+    );
+    if (projectId == null) {
+      return;
+    }
+    widget.repository.moveConversation(
+      conversationId: conversation.id,
+      projectId: projectId,
+    );
+    if (!context.mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(l.moved)));
+  }
+
+  Future<void> _deleteConversation(
+    BuildContext context,
+    Conversation conversation,
+  ) async {
+    final l = AppText.of(widget.repository.settings.language);
+    final confirmed = await _confirm(
+      context: context,
+      title: l.deleteConversation,
+      message: l.deleteConversationConfirm,
+      confirmLabel: l.moveToTrash,
+    );
+    if (!confirmed) {
+      return;
+    }
+    final deleted = widget.repository.deleteConversation(conversation.id);
+    if (!context.mounted || deleted == null) {
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(l.movedToTrash),
+        action: SnackBarAction(
+          label: l.undone,
+          onPressed: () => widget.repository.restoreConversation(deleted),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _renameProject(
+    BuildContext context,
+    ProjectSpace project,
+  ) async {
+    final l = AppText.of(widget.repository.settings.language);
+    final name = await _showTextEditDialog(
+      context: context,
+      title: l.rename,
+      label: l.projectNameLabel,
+      initialValue: project.name,
+    );
+    if (name == null) {
+      return;
+    }
+    widget.repository.updateProject(projectId: project.id, name: name);
+    if (!context.mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(l.renamed)));
+  }
+
+  Future<void> _deleteProject(
+    BuildContext context,
+    ProjectSpace project,
+  ) async {
+    final l = AppText.of(widget.repository.settings.language);
+    final confirmed = await _confirm(
+      context: context,
+      title: l.deleteProject,
+      message: l.deleteProjectWithChats,
+      confirmLabel: l.moveToTrash,
+    );
+    if (!confirmed) {
+      return;
+    }
+    final deleted = widget.repository.deleteProject(project.id);
+    if (!context.mounted || deleted == null) {
+      return;
+    }
+    setState(() {
+      selectedProjectId = _groupedProjectId;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(l.movedToTrash),
+        action: SnackBarAction(
+          label: l.undone,
+          onPressed: () => widget.repository.restoreProject(
+            deleted.project,
+            deleted.conversations,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TrashAccessCard extends StatelessWidget {
+  const _TrashAccessCard({
+    required this.count,
+    required this.language,
+    required this.onTap,
+  });
+
+  final int count;
+  final AppLanguage language;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppText.of(language);
+    final colorScheme = Theme.of(context).colorScheme;
+    return Card(
+      child: InkWell(
+        borderRadius: BorderRadius.circular(8),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Row(
+            children: [
+              Icon(Icons.delete_outline, color: colorScheme.primary),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l.trash,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      count == 0 ? l.emptyTrash : l.trashItemCount(count),
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class TrashSheet extends StatefulWidget {
+  const TrashSheet({
+    super.key,
+    required this.repository,
+    required this.language,
+    required this.onChanged,
+  });
+
+  final WikiRepository repository;
+  final AppLanguage language;
+  final VoidCallback onChanged;
+
+  @override
+  State<TrashSheet> createState() => _TrashSheetState();
+}
+
+class _TrashSheetState extends State<TrashSheet> {
+  @override
+  Widget build(BuildContext context) {
+    final l = AppText.of(widget.language);
+    final items = widget.repository.trashedItems;
+    return DraggableScrollableSheet(
+      expand: false,
+      initialChildSize: 0.72,
+      maxChildSize: 0.92,
+      minChildSize: 0.38,
+      builder: (context, scrollController) {
+        return ListView(
+          controller: scrollController,
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    l.trash,
+                    style: Theme.of(context).textTheme.headlineSmall,
+                  ),
+                ),
+                if (items.isNotEmpty)
+                  IconButton(
+                    tooltip: l.clearTrash,
+                    onPressed: _emptyTrash,
+                    icon: const Icon(Icons.delete_sweep_outlined),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              items.isEmpty ? l.emptyTrash : l.trashItemCount(items.length),
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 16),
+            if (items.isEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 56),
+                child: Center(
+                  child: Column(
+                    children: [
+                      Icon(
+                        Icons.delete_outline,
+                        size: 44,
+                        color: Theme.of(context).colorScheme.outline,
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        l.emptyTrash,
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            else
+              ...items.map(
+                (item) => Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: _TrashItemCard(
+                    item: item,
+                    language: widget.language,
+                    onRestore: () => _restore(item),
+                    onDeleteForever: () => _deleteForever(item),
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _restore(TrashItem item) {
+    final l = AppText.of(widget.language);
+    widget.repository.restoreTrashItem(item.id);
+    widget.onChanged();
+    setState(() {});
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(l.restored)));
+  }
+
+  Future<void> _deleteForever(TrashItem item) async {
+    final l = AppText.of(widget.language);
+    final confirmed = await _confirm(
+      context: context,
+      title: l.deleteForever,
+      message: l.deleteForeverConfirm,
+      confirmLabel: l.deleteForever,
+    );
+    if (!confirmed || !mounted) {
+      return;
+    }
+    widget.repository.permanentlyDeleteTrashItem(item.id);
+    widget.onChanged();
+    setState(() {});
+  }
+
+  Future<void> _emptyTrash() async {
+    final l = AppText.of(widget.language);
+    final confirmed = await _confirm(
+      context: context,
+      title: l.clearTrash,
+      message: l.emptyTrashConfirm,
+      confirmLabel: l.deleteForever,
+    );
+    if (!confirmed || !mounted) {
+      return;
+    }
+    widget.repository.emptyTrash();
+    widget.onChanged();
+    setState(() {});
+  }
+}
+
+class _TrashItemCard extends StatelessWidget {
+  const _TrashItemCard({
+    required this.item,
+    required this.language,
+    required this.onRestore,
+    required this.onDeleteForever,
+  });
+
+  final TrashItem item;
+  final AppLanguage language;
+  final VoidCallback onRestore;
+  final VoidCallback onDeleteForever;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppText.of(language);
+    final isProject = item.type == TrashItemType.project;
+    final subtitle = isProject
+        ? '${l.trashProjectSubtitle} · ${l.savedConversationCount(item.conversationCount)}'
+        : l.trashConversationSubtitle;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  isProject
+                      ? Icons.folder_delete_outlined
+                      : Icons.chat_outlined,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    item.title(l),
+                    style: Theme.of(context).textTheme.titleMedium,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '$subtitle · ${l.pick(ko: '삭제일', en: 'Deleted', ja: '削除日')} ${_formatDateTime(item.deletedAt)}',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              children: [
+                FilledButton.tonalIcon(
+                  onPressed: onRestore,
+                  icon: const Icon(Icons.restore_outlined),
+                  label: Text(l.restore),
+                ),
+                TextButton.icon(
+                  onPressed: onDeleteForever,
+                  icon: const Icon(Icons.delete_forever_outlined),
+                  label: Text(l.deleteForever),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+Future<String?> _showTextEditDialog({
+  required BuildContext context,
+  required String title,
+  required String label,
+  required String initialValue,
+}) async {
+  final controller = TextEditingController(text: initialValue);
+  final result = await showDialog<String>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text(title),
+      content: TextField(
+        controller: controller,
+        autofocus: true,
+        decoration: InputDecoration(labelText: label),
+        textInputAction: TextInputAction.done,
+        onSubmitted: (value) => Navigator.pop(context, value.trim()),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(MaterialLocalizations.of(context).cancelButtonLabel),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(context, controller.text.trim()),
+          child: Text(MaterialLocalizations.of(context).okButtonLabel),
+        ),
+      ],
+    ),
+  );
+  controller.dispose();
+  return result == null || result.trim().isEmpty ? null : result.trim();
+}
+
+Future<String?> _showProjectPickerDialog({
+  required BuildContext context,
+  required WikiRepository repository,
+  required String currentProjectId,
+}) {
+  final l = AppText.of(repository.settings.language);
+  return showDialog<String>(
+    context: context,
+    builder: (context) => SimpleDialog(
+      title: Text(l.moveConversation),
+      children: repository.projects
+          .map(
+            (project) => SimpleDialogOption(
+              onPressed: () => Navigator.pop(context, project.id),
+              child: Row(
+                children: [
+                  Icon(Icons.folder_outlined, color: project.color),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(l.projectName(project.id, project.name)),
+                  ),
+                  if (project.id == currentProjectId)
+                    Icon(
+                      Icons.check,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                ],
+              ),
+            ),
+          )
+          .toList(),
+    ),
+  );
+}
+
+Future<bool> _confirm({
+  required BuildContext context,
+  required String title,
+  required String message,
+  required String confirmLabel,
+}) async {
+  return await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text(title),
+          content: Text(message),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text(MaterialLocalizations.of(context).cancelButtonLabel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: Text(confirmLabel),
+            ),
+          ],
+        ),
+      ) ??
+      false;
 }
 
 class _MetricStrip extends StatelessWidget {
@@ -2124,12 +3347,14 @@ class _ProjectFilter extends StatelessWidget {
     required this.projects,
     required this.language,
     required this.selectedProjectId,
+    required this.groupedProjectId,
     required this.onSelected,
   });
 
   final List<ProjectSpace> projects;
   final AppLanguage language;
   final String selectedProjectId;
+  final String groupedProjectId;
   final ValueChanged<String> onSelected;
 
   @override
@@ -2142,7 +3367,15 @@ class _ProjectFilter extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(right: 8),
             child: ChoiceChip(
-              label: Text(l.all),
+              label: Text(l.projectGroups),
+              selected: selectedProjectId == groupedProjectId,
+              onSelected: (_) => onSelected(groupedProjectId),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: ChoiceChip(
+              label: Text(l.allChats),
               selected: selectedProjectId == 'all',
               onSelected: (_) => onSelected('all'),
             ),
@@ -2164,6 +3397,67 @@ class _ProjectFilter extends StatelessWidget {
   }
 }
 
+class _ProjectSectionHeader extends StatelessWidget {
+  const _ProjectSectionHeader({
+    required this.project,
+    required this.language,
+    required this.count,
+    required this.onRename,
+    required this.onDelete,
+  });
+
+  final ProjectSpace project;
+  final AppLanguage language;
+  final int count;
+  final VoidCallback onRename;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppText.of(language);
+    return Row(
+      children: [
+        Icon(Icons.folder_outlined, color: project.color),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            '${l.projectName(project.id, project.name)} · $count',
+            style: Theme.of(context).textTheme.titleMedium,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+        PopupMenuButton<String>(
+          tooltip: l.manage,
+          onSelected: (value) {
+            switch (value) {
+              case 'rename':
+                onRename();
+              case 'delete':
+                onDelete();
+            }
+          },
+          itemBuilder: (context) => [
+            PopupMenuItem(
+              value: 'rename',
+              child: ListTile(
+                leading: const Icon(Icons.edit_outlined),
+                title: Text(l.rename),
+              ),
+            ),
+            PopupMenuItem(
+              value: 'delete',
+              child: ListTile(
+                leading: const Icon(Icons.delete_outline),
+                title: Text(l.delete),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
 class ConversationCard extends StatelessWidget {
   const ConversationCard({
     super.key,
@@ -2171,12 +3465,18 @@ class ConversationCard extends StatelessWidget {
     required this.project,
     required this.language,
     required this.onTap,
+    this.onRename,
+    this.onMove,
+    this.onDelete,
   });
 
   final Conversation conversation;
   final ProjectSpace project;
   final AppLanguage language;
   final VoidCallback onTap;
+  final VoidCallback? onRename;
+  final VoidCallback? onMove;
+  final VoidCallback? onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -2211,6 +3511,43 @@ class ConversationCard extends StatelessWidget {
                     _relativeTime(conversation.updatedAt),
                     style: Theme.of(context).textTheme.labelMedium,
                   ),
+                  if (onRename != null || onMove != null || onDelete != null)
+                    PopupMenuButton<String>(
+                      tooltip: l.manage,
+                      onSelected: (value) {
+                        switch (value) {
+                          case 'rename':
+                            onRename?.call();
+                          case 'move':
+                            onMove?.call();
+                          case 'delete':
+                            onDelete?.call();
+                        }
+                      },
+                      itemBuilder: (context) => [
+                        PopupMenuItem(
+                          value: 'rename',
+                          child: ListTile(
+                            leading: const Icon(Icons.edit_outlined),
+                            title: Text(l.rename),
+                          ),
+                        ),
+                        PopupMenuItem(
+                          value: 'move',
+                          child: ListTile(
+                            leading: const Icon(Icons.drive_file_move_outlined),
+                            title: Text(l.moveConversation),
+                          ),
+                        ),
+                        PopupMenuItem(
+                          value: 'delete',
+                          child: ListTile(
+                            leading: const Icon(Icons.delete_outline),
+                            title: Text(l.delete),
+                          ),
+                        ),
+                      ],
+                    ),
                 ],
               ),
               const SizedBox(height: 10),
@@ -2263,12 +3600,18 @@ class ConversationDetailSheet extends StatefulWidget {
     required this.project,
     required this.language,
     required this.onAddTag,
+    required this.onRename,
+    required this.onMove,
+    required this.onDelete,
   });
 
   final Conversation conversation;
   final ProjectSpace project;
   final AppLanguage language;
   final ValueChanged<String> onAddTag;
+  final VoidCallback onRename;
+  final VoidCallback onMove;
+  final VoidCallback onDelete;
 
   @override
   State<ConversationDetailSheet> createState() =>
@@ -2300,6 +3643,45 @@ class _ConversationDetailSheetState extends State<ConversationDetailSheet> {
             Text(
               widget.conversation.title,
               style: Theme.of(context).textTheme.headlineSmall,
+            ),
+            Align(
+              alignment: Alignment.centerRight,
+              child: PopupMenuButton<String>(
+                tooltip: l.manage,
+                onSelected: (value) {
+                  switch (value) {
+                    case 'rename':
+                      widget.onRename();
+                    case 'move':
+                      widget.onMove();
+                    case 'delete':
+                      widget.onDelete();
+                  }
+                },
+                itemBuilder: (context) => [
+                  PopupMenuItem(
+                    value: 'rename',
+                    child: ListTile(
+                      leading: const Icon(Icons.edit_outlined),
+                      title: Text(l.rename),
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: 'move',
+                    child: ListTile(
+                      leading: const Icon(Icons.drive_file_move_outlined),
+                      title: Text(l.moveConversation),
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: 'delete',
+                    child: ListTile(
+                      leading: const Icon(Icons.delete_outline),
+                      title: Text(l.delete),
+                    ),
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 8),
             Row(
@@ -2425,64 +3807,107 @@ class ChatCapturePage extends StatefulWidget {
 }
 
 class _ChatCapturePageState extends State<ChatCapturePage> {
+  static const String _allDrawerProjects = 'all';
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   String? projectId;
   final TextEditingController promptController = TextEditingController();
+  final TextEditingController drawerSearchController = TextEditingController();
+  String drawerProjectFilterId = _allDrawerProjects;
   Conversation? activeConversation;
   bool isSaving = false;
 
   @override
   void dispose() {
     promptController.dispose();
+    drawerSearchController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        _ChatTopBar(
-          repository: widget.repository,
-          projectId: projectId,
-          onOpenRecentChats: _openRecentChats,
-          onNewChat: _startNewChat,
-          onCreateProject: _openCreateProjectDialog,
-          onProjectSelected: _selectProject,
-        ),
-        Expanded(
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-            children: [
-              if (activeConversation != null) ...[
-                _ActiveConversationTitle(
-                  conversation: activeConversation!,
-                  project: widget.repository.projectById(
-                    activeConversation!.projectId,
-                  ),
-                  language: widget.repository.settings.language,
-                ),
-                const SizedBox(height: 14),
-                ...activeConversation!.messages.map(
-                  (message) => _ChatMessageBubble(
-                    message: message,
+    final drawerConversations = widget.repository.search(
+      query: drawerSearchController.text,
+      projectId: drawerProjectFilterId,
+      selectedTags: const <String>{},
+    );
+
+    return Scaffold(
+      key: _scaffoldKey,
+      drawerScrimColor: Colors.black.withValues(alpha: 0.42),
+      drawer: ChatHistoryDrawer(
+        repository: widget.repository,
+        conversations: drawerConversations,
+        activeConversationId: activeConversation?.id,
+        selectedProjectId: drawerProjectFilterId,
+        searchController: drawerSearchController,
+        language: widget.repository.settings.language,
+        onSearchChanged: (_) => setState(() {}),
+        onProjectSelected: (value) {
+          setState(() {
+            drawerProjectFilterId = value;
+          });
+        },
+        onNewChat: () {
+          Navigator.pop(context);
+          _startNewChat();
+        },
+        onConversationSelected: (conversation) {
+          setState(() {
+            activeConversation = conversation;
+            projectId = conversation.projectId;
+            drawerProjectFilterId = conversation.projectId;
+          });
+          Navigator.pop(context);
+        },
+      ),
+      body: Column(
+        children: [
+          _ChatTopBar(
+            repository: widget.repository,
+            projectId: projectId,
+            onOpenRecentChats: _openRecentChats,
+            onNewChat: _startNewChat,
+            onCreateProject: _openCreateProjectDialog,
+            onProjectSelected: _selectProject,
+          ),
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+              children: [
+                if (activeConversation != null) ...[
+                  _ActiveConversationTitle(
+                    conversation: activeConversation!,
+                    project: widget.repository.projectById(
+                      activeConversation!.projectId,
+                    ),
                     language: widget.repository.settings.language,
                   ),
-                ),
-              ] else
-                _EmptyChatState(language: widget.repository.settings.language),
-            ],
+                  const SizedBox(height: 14),
+                  ...activeConversation!.messages.map(
+                    (message) => _ChatMessageBubble(
+                      message: message,
+                      language: widget.repository.settings.language,
+                    ),
+                  ),
+                ] else
+                  _EmptyChatState(
+                    language: widget.repository.settings.language,
+                  ),
+              ],
+            ),
           ),
-        ),
-        _ChatComposer(
-          controller: promptController,
-          isSaving: isSaving,
-          repository: widget.repository,
-          language: widget.repository.settings.language,
-          projectId: projectId,
-          onProjectSelected: _selectProject,
-          onCreateProject: _openCreateProjectDialog,
-          onSubmit: _savePrompt,
-        ),
-      ],
+          _ChatComposer(
+            controller: promptController,
+            isSaving: isSaving,
+            repository: widget.repository,
+            language: widget.repository.settings.language,
+            projectId: projectId,
+            onProjectSelected: _selectProject,
+            onCreateProject: _openCreateProjectDialog,
+            onSubmit: _savePrompt,
+          ),
+        ],
+      ),
     );
   }
 
@@ -2555,70 +3980,12 @@ class _ChatCapturePageState extends State<ChatCapturePage> {
     setState(() {
       projectId = value;
       activeConversation = projectChats.isEmpty ? null : projectChats.first;
+      drawerProjectFilterId = value;
     });
   }
 
   void _openRecentChats() {
-    final l = AppText.of(widget.repository.settings.language);
-    showModalBottomSheet<void>(
-      context: context,
-      showDragHandle: true,
-      builder: (context) {
-        final conversations = widget.repository.search(
-          query: '',
-          projectId: projectId ?? 'all',
-          selectedTags: const <String>{},
-        );
-        final selectedProject = projectId == null
-            ? null
-            : widget.repository.projectById(projectId!);
-        return SafeArea(
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
-            children: [
-              Text(
-                selectedProject == null
-                    ? l.recentCaptures
-                    : '${l.recentCaptures} · ${l.projectName(selectedProject.id, selectedProject.name)}',
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 12),
-              FilledButton.icon(
-                onPressed: () {
-                  Navigator.pop(context);
-                  _startNewChat();
-                },
-                icon: const Icon(Icons.edit_square),
-                label: Text(l.newChat),
-              ),
-              const SizedBox(height: 12),
-              if (conversations.isEmpty)
-                _EmptyRecentChats(language: widget.repository.settings.language)
-              else
-                ...conversations.map(
-                  (conversation) => Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: ConversationCard(
-                      conversation: conversation,
-                      project: widget.repository.projectById(
-                        conversation.projectId,
-                      ),
-                      language: widget.repository.settings.language,
-                      onTap: () {
-                        setState(() {
-                          activeConversation = conversation;
-                          projectId = conversation.projectId;
-                        });
-                        Navigator.pop(context);
-                      },
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        );
-      },
-    );
+    _scaffoldKey.currentState?.openDrawer();
   }
 
   Future<void> _openCreateProjectDialog() async {
@@ -2686,6 +4053,241 @@ class _ChatCapturePageState extends State<ChatCapturePage> {
       projectId = project.id;
       activeConversation = null;
     });
+  }
+}
+
+class ChatHistoryDrawer extends StatelessWidget {
+  const ChatHistoryDrawer({
+    super.key,
+    required this.repository,
+    required this.conversations,
+    required this.activeConversationId,
+    required this.selectedProjectId,
+    required this.searchController,
+    required this.language,
+    required this.onSearchChanged,
+    required this.onProjectSelected,
+    required this.onNewChat,
+    required this.onConversationSelected,
+  });
+
+  static const String _allProjects = 'all';
+
+  final WikiRepository repository;
+  final List<Conversation> conversations;
+  final String? activeConversationId;
+  final String selectedProjectId;
+  final TextEditingController searchController;
+  final AppLanguage language;
+  final ValueChanged<String> onSearchChanged;
+  final ValueChanged<String> onProjectSelected;
+  final VoidCallback onNewChat;
+  final ValueChanged<Conversation> onConversationSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppText.of(language);
+    final colorScheme = Theme.of(context).colorScheme;
+    final width = math.min(MediaQuery.of(context).size.width * 0.86, 390.0);
+    return Drawer(
+      width: width,
+      backgroundColor: const Color(0xFFFBFAF5),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(18, 18, 14, 18),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              TextField(
+                key: const Key('chat-drawer-search'),
+                controller: searchController,
+                onChanged: onSearchChanged,
+                decoration: InputDecoration(
+                  hintText: l.chatSearch,
+                  prefixIcon: const Icon(Icons.search),
+                  suffixIcon: searchController.text.isEmpty
+                      ? null
+                      : IconButton(
+                          tooltip: l.clearSearch,
+                          onPressed: () {
+                            searchController.clear();
+                            onSearchChanged('');
+                          },
+                          icon: const Icon(Icons.close),
+                        ),
+                  filled: true,
+                  fillColor: colorScheme.surfaceContainerHighest.withValues(
+                    alpha: 0.65,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(28),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: onNewChat,
+                  icon: const Icon(Icons.edit_square),
+                  label: Text(l.newChat),
+                ),
+              ),
+              const SizedBox(height: 16),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: ChoiceChip(
+                        label: Text(l.allChats),
+                        selected: selectedProjectId == _allProjects,
+                        onSelected: (_) => onProjectSelected(_allProjects),
+                      ),
+                    ),
+                    ...repository.projects.map(
+                      (project) => Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: ChoiceChip(
+                          avatar: CircleAvatar(backgroundColor: project.color),
+                          label: Text(l.projectName(project.id, project.name)),
+                          selected: selectedProjectId == project.id,
+                          onSelected: (_) => onProjectSelected(project.id),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+              Text(l.chats, style: Theme.of(context).textTheme.titleMedium),
+              const SizedBox(height: 10),
+              Expanded(
+                child: conversations.isEmpty
+                    ? _EmptyRecentChats(language: language)
+                    : ListView.separated(
+                        itemCount: conversations.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 8),
+                        itemBuilder: (context, index) {
+                          final conversation = conversations[index];
+                          return _ChatHistoryTile(
+                            conversation: conversation,
+                            project: repository.projectById(
+                              conversation.projectId,
+                            ),
+                            language: language,
+                            selected: conversation.id == activeConversationId,
+                            onTap: () => onConversationSelected(conversation),
+                          );
+                        },
+                      ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ChatHistoryTile extends StatelessWidget {
+  const _ChatHistoryTile({
+    required this.conversation,
+    required this.project,
+    required this.language,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final Conversation conversation;
+  final ProjectSpace project;
+  final AppLanguage language;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppText.of(language);
+    final colorScheme = Theme.of(context).colorScheme;
+    return Material(
+      color: selected
+          ? colorScheme.primary.withValues(alpha: 0.12)
+          : Colors.transparent,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 10,
+                    height: 10,
+                    decoration: BoxDecoration(
+                      color: project.color,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      conversation.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.titleSmall,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    _relativeTime(conversation.updatedAt),
+                    style: Theme.of(context).textTheme.labelMedium,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                l.projectName(project.id, project.name),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.labelMedium,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                conversation.body,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
+              if (conversation.tags.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 4,
+                  children: conversation.tags
+                      .take(3)
+                      .map(
+                        (tag) => Text(
+                          '#$tag',
+                          style: Theme.of(context).textTheme.labelMedium
+                              ?.copyWith(color: colorScheme.primary),
+                        ),
+                      )
+                      .toList(),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 

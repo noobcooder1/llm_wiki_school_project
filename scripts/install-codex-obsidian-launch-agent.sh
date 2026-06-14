@@ -11,6 +11,7 @@ Options:
   --vault PATH   Obsidian vault path. Notes are written to PATH/Codex Logs.
   --output PATH  Exact output folder for Codex Markdown notes.
   --recent N     Number of recent sessions to keep updated. Default: 20.
+  --flat         Write all notes directly to the output folder.
 USAGE
 }
 
@@ -23,6 +24,7 @@ PLIST="${HOME}/Library/LaunchAgents/${LABEL}.plist"
 RECENT="20"
 DEST_KIND=""
 DEST_VALUE=""
+FLAT="false"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -39,6 +41,10 @@ while [[ $# -gt 0 ]]; do
     --recent)
       RECENT="${2:-20}"
       shift 2
+      ;;
+    --flat)
+      FLAT="true"
+      shift
       ;;
     --help|-h)
       usage
@@ -78,6 +84,7 @@ cat > "${PLIST}" <<PLIST
     <string>--watch</string>
     <string>${DEST_KIND}</string>
     <string>${DEST_VALUE}</string>
+$(if [[ "${FLAT}" == "true" ]]; then printf '    <string>--flat</string>\n'; fi)
     <string>--recent</string>
     <string>${RECENT}</string>
   </array>

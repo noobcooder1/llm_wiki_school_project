@@ -20,7 +20,7 @@ Codex Desktop은 현재 다음 위치에 세션 원문을 저장한다.
 
 ## 한 번 내보내기
 
-Obsidian 설정에서 열린 Vault를 자동 감지해서 `<Vault>/Codex Logs`에 최근 20개 세션을 저장한다.
+Obsidian 설정에서 열린 Vault를 자동 감지해서 `<Vault>/Codex Logs/<Project>/`에 최근 20개 세션을 저장한다.
 
 ```sh
 node scripts/codex-to-obsidian.js --once
@@ -32,11 +32,13 @@ node scripts/codex-to-obsidian.js --once
 node scripts/codex-to-obsidian.js --once --vault "/Users/a1/Documents/llm wiki for copilot"
 ```
 
-정확한 출력 폴더를 지정하려면:
+정확한 출력 루트 폴더를 지정하려면:
 
 ```sh
 node scripts/codex-to-obsidian.js --once --output "/Users/a1/Documents/llm wiki for copilot/Codex Logs"
 ```
+
+프로젝트 폴더를 만들지 않고 예전처럼 출력 폴더 바로 아래에 모두 저장하려면 `--flat`을 붙인다.
 
 ## 자동 감시
 
@@ -54,14 +56,19 @@ node scripts/codex-to-obsidian.js --once --all --vault "/Users/a1/Documents/llm 
 
 ## Obsidian 노트 형식
 
-각 세션은 하나의 Markdown 파일로 저장된다.
+각 세션은 하나의 Markdown 파일로 저장된다. 기본 구조는 Codex 세션의 `cwd`에서 프로젝트명을 읽어 다음처럼 나눈다.
 
 ```text
 Codex Logs/
-  2026-05-19-코덱스-옵시디언-자동저장-추가-019e3ec6.md
+  llm-wiki-codex-logs/
+    2026-06-10-프로젝트별-채팅로그-분리-저장-019eaf8b.md
+  llm_wiki_school_project/
+    2026-05-19-코덱스-옵시디언-자동저장-추가-019e3ec6.md
+  Unsorted/
+    2026-05-06-Codex-Session-...md
 ```
 
-노트에는 YAML Frontmatter, 세션 메타데이터, 대화 기록이 포함된다.
+노트에는 YAML Frontmatter, 프로젝트명, 세션 메타데이터, 대화 기록이 포함된다.
 
 기본적으로 API 키, 이메일, 카드처럼 보이는 숫자는 마스킹한다. 원문 그대로 저장해야 할 때만 `--no-mask` 옵션을 사용한다.
 

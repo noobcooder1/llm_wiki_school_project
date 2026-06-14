@@ -100,6 +100,187 @@ void main() {
     expect(projectChats.first.projectId, project.id);
   });
 
+  test('repository manages conversations and projects', () async {
+    final repository = WikiRepository();
+    await repository.initialize();
+    final firstProject = repository.createProject(name: '첫 프로젝트');
+    final secondProject = repository.createProject(name: '둘 프로젝트');
+    final result = await repository.createConversation(
+      projectId: firstProject.id,
+      prompt: '관리 기능 테스트 대화',
+    );
+
+    repository.renameConversation(
+      conversationId: result.conversation.id,
+      title: '수정된 대화 제목',
+    );
+    expect(
+      repository.conversationById(result.conversation.id)?.title,
+      '수정된 대화 제목',
+    );
+
+    repository.moveConversation(
+      conversationId: result.conversation.id,
+      projectId: secondProject.id,
+    );
+    expect(
+      repository.conversationById(result.conversation.id)?.projectId,
+      secondProject.id,
+    );
+
+    final deletedConversation = repository.deleteConversation(
+      result.conversation.id,
+    );
+    expect(deletedConversation, isNotNull);
+    expect(repository.conversationById(result.conversation.id), isNull);
+    expect(repository.trashedItems, hasLength(1));
+    expect(repository.trashedItems.first.type, TrashItemType.conversation);
+    repository.restoreTrashItem(repository.trashedItems.first.id);
+    expect(repository.conversationById(result.conversation.id), isNotNull);
+    expect(repository.trashedItems, isEmpty);
+
+    repository.updateProject(projectId: secondProject.id, name: '변경된 프로젝트');
+    expect(repository.projectById(secondProject.id).name, '변경된 프로젝트');
+
+    final deletedProject = repository.deleteProject(secondProject.id);
+    expect(deletedProject, isNotNull);
+    expect(
+      repository.projects.any((project) => project.id == secondProject.id),
+      isFalse,
+    );
+    expect(repository.trashedItems, hasLength(1));
+    expect(repository.trashedItems.first.type, TrashItemType.project);
+    expect(repository.trashedItems.first.conversationCount, 1);
+    repository.restoreTrashItem(repository.trashedItems.first.id);
+    expect(
+      repository.projects.any((project) => project.id == secondProject.id),
+      isTrue,
+    );
+    expect(repository.conversationById(result.conversation.id), isNotNull);
+    expect(repository.trashedItems, isEmpty);
+    expect(deletedProject, isNotNull);
+  });
+
+  test('repository persists trash and restores from trash item', () async {
+    final repository = WikiRepository();
+    await repository.initialize();
+    final project = repository.createProject(name: '휴지통 테스트');
+    final result = await repository.createConversation(
+      projectId: project.id,
+      prompt: '나중에 복원할 대화',
+    );
+
+    repository.deleteConversation(result.conversation.id);
+    await Future<void>.delayed(Duration.zero);
+
+    final restoredRepository = WikiRepository();
+    await restoredRepository.initialize();
+
+    expect(restoredRepository.conversationById(result.conversation.id), isNull);
+    expect(restoredRepository.trashedItems, hasLength(1));
+    restoredRepository.restoreTrashItem(
+      restoredRepository.trashedItems.first.id,
+    );
+    expect(
+      restoredRepository.conversationById(result.conversation.id),
+      isNotNull,
+    );
+    expect(restoredRepository.trashedItems, isEmpty);
+  });
+
+  test('conversation auto-generates Korean health tags', () {
+    final now = DateTime.now();
+    final conversation = Conversation(
+      id: 'conv-health',
+      projectId: 'health',
+      title: '목은 체지방들은 빼기가 어렵니?',
+      createdAt: now,
+      updatedAt: now,
+      messages: [
+        KnowledgeMessage(
+          id: 'msg-user',
+          role: AiRole.user,
+          content: '목은 체지방들은 빼기가 어렵니?',
+          createdAt: now,
+        ),
+        KnowledgeMessage(
+          id: 'msg-ai',
+          role: AiRole.assistant,
+          content: '체지방 감량에는 식단, 운동, 신진대사 관리가 중요합니다.',
+          createdAt: now,
+        ),
+      ],
+    );
+
+    expect(conversation.tags, containsAll(['체지방', '다이어트', '건강']));
+  });
+
+  test('conversation auto-generates tags for arbitrary topics', () {
+    final now = DateTime.now();
+    final historyConversation = Conversation(
+      id: 'conv-history',
+      projectId: 'study',
+      title: '프랑스 혁명',
+      createdAt: now,
+      updatedAt: now,
+      messages: [
+        KnowledgeMessage(
+          id: 'msg-history-user',
+          role: AiRole.user,
+          content: '프랑스 혁명의 원인과 나폴레옹 시대를 요약해줘.',
+          createdAt: now,
+        ),
+        KnowledgeMessage(
+          id: 'msg-history-ai',
+          role: AiRole.assistant,
+          content: '프랑스 혁명은 계몽사상, 신분제, 재정 위기와 연결됩니다.',
+          createdAt: now,
+        ),
+      ],
+    );
+    final climateConversation = Conversation(
+      id: 'conv-climate',
+      projectId: 'study',
+      title: '기후 변화',
+      createdAt: now,
+      updatedAt: now,
+      messages: [
+        KnowledgeMessage(
+          id: 'msg-climate-user',
+          role: AiRole.user,
+          content: '기후 변화와 탄소 배출권의 관계를 알려줘.',
+          createdAt: now,
+        ),
+        KnowledgeMessage(
+          id: 'msg-climate-ai',
+          role: AiRole.assistant,
+          content: '탄소 배출권은 온실가스 감축을 유도하는 시장 기반 정책입니다.',
+          createdAt: now,
+        ),
+      ],
+    );
+
+    expect(historyConversation.tags, containsAll(['프랑스', '혁명', '나폴레옹']));
+    expect(climateConversation.tags, containsAll(['기후', '변화', '탄소', '배출권']));
+  });
+
+  test(
+    'repository saves prompt-derived tags before ai response succeeds',
+    () async {
+      final repository = WikiRepository();
+      await repository.initialize();
+      final project = repository.createProject(name: '건강 질문');
+
+      final result = await repository.createConversation(
+        projectId: project.id,
+        prompt: '목은 체지방들은 빼기가 어렵니?',
+      );
+
+      expect(result.conversation.manualTags, containsAll(['체지방', '다이어트']));
+      expect(result.conversation.tags, containsAll(['체지방', '다이어트']));
+    },
+  );
+
   test('repository stores provider api keys independently', () async {
     final repository = WikiRepository();
     await repository.initialize();
@@ -294,6 +475,22 @@ void main() {
     await tester.binding.setSurfaceSize(null);
   });
 
+  testWidgets('library defaults to grouped project view', (
+    WidgetTester tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(430, 1100));
+    await tester.pumpWidget(const LlmWikiApp());
+
+    await tester.tap(find.text('라이브러리'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('프로젝트별'), findsOneWidget);
+    expect(find.text('전체 채팅'), findsOneWidget);
+    expect(find.text('휴지통'), findsOneWidget);
+    expect(find.text('휴지통이 비어 있습니다'), findsOneWidget);
+    await tester.binding.setSurfaceSize(null);
+  });
+
   testWidgets(
     'chat starts empty and hides security controls until options open',
     (WidgetTester tester) async {
@@ -360,6 +557,37 @@ void main() {
 
     expect(find.text('새 AI 채팅을 시작하세요'), findsOneWidget);
     expect(find.textContaining('Start a focused'), findsNothing);
+    await tester.binding.setSurfaceSize(null);
+  });
+
+  testWidgets('chat menu opens a searchable side drawer', (
+    WidgetTester tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(430, 1100));
+    await tester.pumpWidget(const LlmWikiApp());
+    await createProjectInUi(tester, '검색 테스트');
+
+    await tester.enterText(
+      find.byKey(const Key('prompt-field')),
+      '검색 가능한 채팅 목록을 확인해줘.',
+    );
+    await tester.tap(find.byKey(const Key('ask-save-button')));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.menu));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('chat-drawer-search')), findsOneWidget);
+    expect(find.text('새 채팅'), findsWidgets);
+    expect(find.textContaining('검색 가능한 채팅'), findsWidgets);
+
+    await tester.enterText(
+      find.byKey(const Key('chat-drawer-search')),
+      '없는 대화',
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('아직 최근 채팅이 없습니다'), findsOneWidget);
     await tester.binding.setSurfaceSize(null);
   });
 

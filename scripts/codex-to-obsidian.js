@@ -17,6 +17,7 @@ function usage() {
     '  --recent <number>   Number of recent sessions to export (default: 20)',
     '  --vault <path>      Obsidian vault path; output goes to <vault>/Codex Logs',
     '  --output <path>     Exact output folder for Markdown notes',
+    '  --flat              Write all notes directly to the output folder',
     '  --codex-home <path> Codex home folder (default: ~/.codex)',
     '  --no-mask           Do not mask common secrets in exported notes',
     '  --help              Show this help',
@@ -29,6 +30,7 @@ function parseArgs(argv) {
     recent: 20,
     all: false,
     mask: true,
+    flat: false,
     vault: process.env.OBSIDIAN_VAULT || '',
     output: process.env.OBSIDIAN_OUTPUT_DIR || '',
     codexHome: process.env.CODEX_HOME || path.join(os.homedir(), '.codex'),
@@ -40,6 +42,7 @@ function parseArgs(argv) {
     else if (arg === '--watch') args.mode = 'watch';
     else if (arg === '--all') args.all = true;
     else if (arg === '--no-mask') args.mask = false;
+    else if (arg === '--flat') args.flat = true;
     else if (arg === '--recent') {
       index += 1;
       args.recent = Number.parseInt(argv[index] || '', 10);
@@ -292,6 +295,7 @@ function lastTimestamp(records) {
 function renderMarkdown(session) {
   const tags = ['codex', 'ai-log', 'obsidian', 'llm-wiki'];
   const createdDate = toDatePart(session.createdAt);
+  const project = projectNameFromSession(session);
   const lines = [
     '---',
     `title: ${yamlQuote(session.title)}`,
@@ -299,6 +303,7 @@ function renderMarkdown(session) {
     `updated: ${session.updatedAt || ''}`,
     `source: ${yamlQuote(session.originator || 'Codex')}`,
     `thread_id: ${yamlQuote(session.threadId)}`,
+    `project: ${yamlQuote(project)}`,
     'tags:',
     ...tags.map((tag) => `  - ${tag}`),
     '---',
@@ -308,6 +313,7 @@ function renderMarkdown(session) {
     '## Metadata',
     '',
     `- Date: ${createdDate}`,
+    `- Project: ${project}`,
     `- Thread ID: ${session.threadId}`,
     session.cwd ? `- Workspace: ${session.cwd}` : '',
     `- Source file: ${session.sourcePath}`,
@@ -353,6 +359,26 @@ function outputFileName(session) {
   return `${date}-${slug}-${session.threadId.slice(0, 8)}.md`;
 }
 
+function outputSubdirName(session) {
+  return slugify(projectNameFromSession(session));
+}
+
+function projectNameFromSession(session) {
+  if (session.cwd) {
+    const cwd = path.resolve(session.cwd);
+    const baseName = path.basename(cwd);
+    const parentName = path.basename(path.dirname(cwd));
+
+    if (parentName && /^\d{4}-\d{2}-\d{2}$/.test(parentName)) {
+      return baseName || parentName;
+    }
+
+    if (baseName && baseName !== path.parse(cwd).root) return baseName;
+  }
+
+  return 'Unsorted';
+}
+
 function slugify(value) {
   const cleaned = String(value || 'codex-session')
     .normalize('NFC')
@@ -375,7 +401,11 @@ function exportSessions(args) {
   for (const entry of selected) {
     const session = parseSession(entry.filePath, threadNames, args.mask);
     const markdown = renderMarkdown(session);
-    const outputPath = path.join(outputDir, outputFileName(session));
+    const sessionOutputDir = args.flat
+      ? outputDir
+      : path.join(outputDir, outputSubdirName(session));
+    fs.mkdirSync(sessionOutputDir, { recursive: true });
+    const outputPath = path.join(sessionOutputDir, outputFileName(session));
     fs.writeFileSync(outputPath, markdown, 'utf8');
     written.push(outputPath);
   }
