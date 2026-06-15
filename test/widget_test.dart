@@ -45,7 +45,7 @@ void main() {
   });
 
   Future<void> createProjectInUi(WidgetTester tester, String name) async {
-    await tester.tap(find.byIcon(Icons.more_horiz));
+    await tester.tap(find.byIcon(Icons.tune));
     await tester.pumpAndSettle();
     await tester.tap(find.text('새 프로젝트'));
     await tester.pumpAndSettle();
@@ -264,6 +264,68 @@ void main() {
     expect(climateConversation.tags, containsAll(['기후', '변화', '탄소', '배출권']));
   });
 
+  test('conversation skips connective endings and sentence filler tags', () {
+    final now = DateTime.now();
+    final conversation = Conversation(
+      id: 'conv-connectives',
+      projectId: 'study',
+      title: '미래 전망',
+      createdAt: now,
+      updatedAt: now,
+      messages: [
+        KnowledgeMessage(
+          id: 'msg-connective-user',
+          role: AiRole.user,
+          content: '그렇다면 추후의 미래에는 전망이 어떻게 변할까?',
+          createdAt: now,
+        ),
+        KnowledgeMessage(
+          id: 'msg-connective-ai',
+          role: AiRole.assistant,
+          content: '미래 전망은 AI 기술과 사회 변화에 따라 달라질 것입니다.',
+          createdAt: now,
+        ),
+      ],
+    );
+
+    expect(conversation.tags, containsAll(['미래', '전망']));
+    expect(conversation.tags, isNot(contains('그렇다면')));
+    expect(conversation.tags, isNot(contains('변할까')));
+    expect(conversation.tags, isNot(contains('것입니다')));
+    expect(conversation.tags, isNot(contains('그렇다면-추후')));
+  });
+
+  test('conversation ignores assistant failure text when generating tags', () {
+    final now = DateTime.now();
+    final conversation = Conversation(
+      id: 'conv-error-tags',
+      projectId: 'coding',
+      title: '플러터 장점',
+      createdAt: now,
+      updatedAt: now,
+      messages: [
+        KnowledgeMessage(
+          id: 'msg-error-user',
+          role: AiRole.user,
+          content: '플러터의 장점은 뭐야?',
+          createdAt: now,
+        ),
+        KnowledgeMessage(
+          id: 'msg-error-ai',
+          role: AiRole.assistant,
+          content:
+              'AI 답변 생성에 실패했습니다. 원본 오류: Your project has been denied access. Please contact support.',
+          createdAt: now,
+        ),
+      ],
+    );
+
+    expect(conversation.tags, contains('flutter'));
+    expect(conversation.tags, isNot(contains('api-key')));
+    expect(conversation.tags, isNot(contains('contact-support')));
+    expect(conversation.tags, isNot(contains('denied-access')));
+  });
+
   test(
     'repository saves prompt-derived tags before ai response succeeds',
     () async {
@@ -280,6 +342,30 @@ void main() {
       expect(result.conversation.tags, containsAll(['체지방', '다이어트']));
     },
   );
+
+  test('repository can save reviewed title and tags only', () async {
+    final repository = WikiRepository();
+    await repository.initialize();
+    final project = repository.createProject(name: '검토 저장');
+    final preview = repository.previewConversationMetadata(
+      'Flutter hot reload 정리',
+    );
+
+    expect(preview.title, contains('Flutter hot reload'));
+    expect(preview.tags, contains('flutter'));
+
+    final result = await repository.createConversation(
+      projectId: project.id,
+      prompt: 'Flutter hot reload 정리',
+      reviewedTitle: '직접 정한 제목',
+      reviewedTags: const ['직접태그'],
+      metadataReviewed: true,
+    );
+
+    expect(result.conversation.title, '직접 정한 제목');
+    expect(result.conversation.manualTags, ['직접태그']);
+    expect(result.conversation.tags, ['직접태그']);
+  });
 
   test('repository stores provider api keys independently', () async {
     final repository = WikiRepository();
@@ -475,6 +561,54 @@ void main() {
     await tester.binding.setSurfaceSize(null);
   });
 
+  testWidgets('library collapses tags and expands them on demand', (
+    WidgetTester tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(430, 1100));
+    final repository = WikiRepository();
+    await repository.initialize();
+    final project = repository.createProject(name: '태그 정리');
+    final now = DateTime.now();
+    repository.conversations = List.generate(10, (index) {
+      return Conversation(
+        id: 'conv-tag-$index',
+        projectId: project.id,
+        title: '태그 대화 $index',
+        createdAt: now.add(Duration(minutes: index)),
+        updatedAt: now.add(Duration(minutes: index)),
+        manualTags: ['공통', '태그$index'],
+        metadataReviewed: true,
+        messages: [
+          KnowledgeMessage(
+            id: 'msg-tag-$index',
+            role: AiRole.user,
+            content: '태그 화면 정리 $index',
+            createdAt: now.add(Duration(minutes: index)),
+          ),
+        ],
+      );
+    });
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(body: LibraryPage(repository: repository)),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(repository.tagUsage.first.key, '공통');
+    expect(find.widgetWithText(FilterChip, '#공통'), findsOneWidget);
+    expect(find.widgetWithText(FilterChip, '#태그9'), findsNothing);
+    expect(find.textContaining('더보기'), findsOneWidget);
+
+    await tester.tap(find.textContaining('더보기'));
+    await tester.pumpAndSettle();
+
+    expect(find.widgetWithText(FilterChip, '#태그9'), findsOneWidget);
+    expect(find.text('태그 접기'), findsOneWidget);
+    await tester.binding.setSurfaceSize(null);
+  });
+
   testWidgets('library defaults to grouped project view', (
     WidgetTester tester,
   ) async {
@@ -560,6 +694,119 @@ void main() {
     await tester.binding.setSurfaceSize(null);
   });
 
+  testWidgets('chat overflow menu manages the active conversation', (
+    WidgetTester tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(430, 1100));
+    await tester.pumpWidget(const LlmWikiApp());
+    await createProjectInUi(tester, '관리 테스트');
+
+    await tester.enterText(find.byKey(const Key('prompt-field')), '삭제 전 대화');
+    await tester.tap(find.byKey(const Key('ask-save-button')));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.more_horiz));
+    await tester.pumpAndSettle();
+
+    expect(find.text('이름 변경'), findsOneWidget);
+    expect(find.text('프로젝트 이동'), findsOneWidget);
+    expect(find.text('휴지통으로 이동'), findsOneWidget);
+
+    await tester.tap(find.text('이름 변경'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).last, '관리 메뉴 변경 제목');
+    await tester.tap(find.byType(FilledButton).last);
+    await tester.pumpAndSettle();
+
+    expect(find.text('관리 메뉴 변경 제목'), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.more_horiz));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('휴지통으로 이동'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('휴지통으로 이동'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('새 AI 채팅을 시작하세요'), findsOneWidget);
+    expect(find.text('관리 메뉴 변경 제목'), findsNothing);
+    await tester.binding.setSurfaceSize(null);
+  });
+
+  testWidgets('library refreshes immediately after moving a chat to trash', (
+    WidgetTester tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(430, 1100));
+    await tester.pumpWidget(const LlmWikiApp());
+    await createProjectInUi(tester, '즉시 갱신 테스트');
+
+    await tester.enterText(
+      find.byKey(const Key('prompt-field')),
+      '라이브러리 삭제 테스트',
+    );
+    await tester.tap(find.byKey(const Key('ask-save-button')));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('라이브러리'));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('라이브러리 삭제 테스트'), findsWidgets);
+
+    await tester.tap(find.byTooltip('관리').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('삭제').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('휴지통으로 이동'));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('라이브러리 삭제 테스트'), findsNothing);
+    await tester.binding.setSurfaceSize(null);
+  });
+
+  testWidgets('metadata review option asks before saving chat', (
+    WidgetTester tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(430, 1100));
+    await tester.pumpWidget(const LlmWikiApp());
+
+    await tester.tap(find.text('설정'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('저장 전 제목/태그 확인'));
+    await tester.tap(find.text('저장 전 제목/태그 확인'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.chat_bubble_outline));
+    await tester.pumpAndSettle();
+    await createProjectInUi(tester, '메타데이터 검토');
+
+    await tester.enterText(
+      find.byKey(const Key('prompt-field')),
+      'Flutter hot reload 정리',
+    );
+    await tester.tap(find.byKey(const Key('ask-save-button')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('저장 전 확인'), findsOneWidget);
+    await tester.enterText(
+      find.byKey(const Key('metadata-title-field')),
+      '직접 수정한 제목',
+    );
+    await tester.enterText(
+      find.byKey(const Key('metadata-tags-field')),
+      '#직접태그, #검토',
+    );
+    await tester.tap(find.byKey(const Key('metadata-save-button')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('직접 수정한 제목'), findsOneWidget);
+
+    await tester.tap(find.text('라이브러리'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('#직접태그'), findsWidgets);
+    expect(find.text('#flutter'), findsNothing);
+    await tester.binding.setSurfaceSize(null);
+  });
+
   testWidgets('chat menu opens a searchable side drawer', (
     WidgetTester tester,
   ) async {
@@ -579,7 +826,9 @@ void main() {
 
     expect(find.byKey(const Key('chat-drawer-search')), findsOneWidget);
     expect(find.text('새 채팅'), findsWidgets);
+    expect(find.text('프로젝트별 채팅 보기'), findsOneWidget);
     expect(find.textContaining('검색 가능한 채팅'), findsWidgets);
+    expect(find.textContaining('#'), findsNothing);
 
     await tester.enterText(
       find.byKey(const Key('chat-drawer-search')),
@@ -651,6 +900,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.textContaining('Gemini API 키'), findsOneWidget);
+    expect(find.text('구현 경계'), findsNothing);
 
     await tester.tap(find.byKey(const Key('ai-provider-menu')));
     await tester.pumpAndSettle();

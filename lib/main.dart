@@ -167,6 +167,15 @@ class AppText {
   String get tags => pick(ko: '태그', en: 'Tags', ja: 'タグ');
   String get code => pick(ko: '코드', en: 'Code', ja: 'コード');
   String get manage => pick(ko: '관리', en: 'Manage', ja: '管理');
+  String get selectChatFirst =>
+      pick(ko: '먼저 대화를 선택하세요', en: 'Select a chat first', ja: '先に会話を選択');
+  String showMoreTags(int count) => pick(
+    ko: '태그 $count개 더보기',
+    en: 'Show $count more tags',
+    ja: 'タグを$count件さらに表示',
+  );
+  String get collapseTags =>
+      pick(ko: '태그 접기', en: 'Collapse tags', ja: 'タグを折りたたむ');
   String get rename => pick(ko: '이름 변경', en: 'Rename', ja: '名前を変更');
   String get move => pick(ko: '이동', en: 'Move', ja: '移動');
   String get delete => pick(ko: '삭제', en: 'Delete', ja: '削除');
@@ -208,6 +217,8 @@ class AppText {
       pick(ko: '프로젝트 삭제', en: 'Delete project', ja: 'プロジェクトを削除');
   String get projectGroups =>
       pick(ko: '프로젝트별', en: 'By project', ja: 'プロジェクト別');
+  String get projectChatFilter =>
+      pick(ko: '프로젝트별 채팅 보기', en: 'View chats by project', ja: 'プロジェクト別チャット表示');
   String get allChats => pick(ko: '전체 채팅', en: 'All chats', ja: 'すべての会話');
   String get moveConversation =>
       pick(ko: '프로젝트 이동', en: 'Move to project', ja: 'プロジェクトへ移動');
@@ -276,6 +287,33 @@ class AppText {
       pick(ko: '메시지 옵션', en: 'Message options', ja: 'メッセージオプション');
   String get securityControls =>
       pick(ko: '보안 기능', en: 'Security controls', ja: 'セキュリティ機能');
+  String get reviewMetadataTitle => pick(
+    ko: '저장 전 제목/태그 확인',
+    en: 'Review title and tags before saving',
+    ja: '保存前にタイトル/タグを確認',
+  );
+  String get reviewMetadataSubtitle => pick(
+    ko: 'AI 채팅을 저장하기 전에 자동 생성된 제목과 태그를 확인하고 수정합니다.',
+    en: 'Check and edit the generated title and tags before an AI chat is saved.',
+    ja: 'AIチャットを保存する前に自動生成されたタイトルとタグを確認・編集します。',
+  );
+  String get reviewMetadataDialogTitle =>
+      pick(ko: '저장 전 확인', en: 'Review before saving', ja: '保存前の確認');
+  String get reviewMetadataDialogDescription => pick(
+    ko: '자동으로 만든 제목과 태그입니다. 그대로 저장하거나 필요한 부분을 수정하세요.',
+    en: 'These are the generated title and tags. Save them as-is or edit anything you need.',
+    ja: '自動生成されたタイトルとタグです。そのまま保存するか必要に応じて編集してください。',
+  );
+  String get generatedTitle => pick(ko: '제목', en: 'Title', ja: 'タイトル');
+  String get generatedTags => pick(ko: '태그', en: 'Tags', ja: 'タグ');
+  String get tagInputHint => pick(
+    ko: '쉼표로 구분해 입력하세요',
+    en: 'Separate tags with commas',
+    ja: 'カンマで区切って入力してください',
+  );
+  String get confirmAndSave => pick(ko: '저장', en: 'Save', ja: '保存');
+  String get enterTitleFirst =>
+      pick(ko: '제목을 입력하세요', en: 'Enter a title', ja: 'タイトルを入力してください');
   String get emptyChatTitle =>
       pick(ko: '새 AI 채팅을 시작하세요', en: 'Start a new AI chat', ja: '新しいAIチャットを開始');
   String get emptyChatHint => pick(
@@ -547,6 +585,13 @@ class CaptureResult {
 
   final Conversation conversation;
   final CaptureSaveResult result;
+}
+
+class ConversationSaveMetadata {
+  const ConversationSaveMetadata({required this.title, required this.tags});
+
+  final String title;
+  final List<String> tags;
 }
 
 String _wikiAssistantInstructions(AppLanguage language) {
@@ -973,6 +1018,7 @@ class Conversation {
     required this.createdAt,
     required this.updatedAt,
     this.manualTags = const [],
+    this.metadataReviewed = false,
   });
 
   final String id;
@@ -982,11 +1028,29 @@ class Conversation {
   final DateTime createdAt;
   final DateTime updatedAt;
   final List<String> manualTags;
+  final bool metadataReviewed;
 
   String get body => messages.map((message) => message.content).join('\n\n');
 
+  String get _tagSource {
+    return messages
+        .where(
+          (message) =>
+              message.role == AiRole.user ||
+              !_looksLikeAssistantFailureContent(message.content),
+        )
+        .map((message) => message.content)
+        .join('\n\n');
+  }
+
   List<String> get tags {
-    return {..._autoTagsFromText(body), ...manualTags}.toList()..sort();
+    if (metadataReviewed) {
+      return manualTags.toList()..sort();
+    }
+    return {
+      ..._autoTagsFromText(_tagSource),
+      ...manualTags.where(_isUsefulStoredTag),
+    }.toList()..sort();
   }
 
   List<String> get codeSnippets {
@@ -1017,6 +1081,7 @@ class Conversation {
     List<KnowledgeMessage>? messages,
     DateTime? updatedAt,
     List<String>? manualTags,
+    bool? metadataReviewed,
   }) {
     return Conversation(
       id: id,
@@ -1026,6 +1091,7 @@ class Conversation {
       createdAt: createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       manualTags: manualTags ?? this.manualTags,
+      metadataReviewed: metadataReviewed ?? this.metadataReviewed,
     );
   }
 
@@ -1037,6 +1103,7 @@ class Conversation {
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
       'manualTags': manualTags,
+      'metadataReviewed': metadataReviewed,
       'messages': messages.map((message) => message.toJson()).toList(),
     };
   }
@@ -1051,6 +1118,7 @@ class Conversation {
       createdAt: DateTime.tryParse(json['createdAt']?.toString() ?? '') ?? now,
       updatedAt: DateTime.tryParse(json['updatedAt']?.toString() ?? '') ?? now,
       manualTags: _stringListFromJson(json['manualTags']),
+      metadataReviewed: json['metadataReviewed'] == true,
       messages: messagesJson is List
           ? messagesJson
                 .whereType<Map>()
@@ -1071,6 +1139,7 @@ class SecuritySettings {
     required this.appLockEnabled,
     required this.localDbEncryption,
     required this.e2eeCloudSync,
+    required this.reviewMetadataBeforeSave,
     required this.apiKeySaved,
     this.aiProvider = AiProvider.gemini,
     this.activeApiKeyIds = const {},
@@ -1081,6 +1150,7 @@ class SecuritySettings {
   final bool appLockEnabled;
   final bool localDbEncryption;
   final bool e2eeCloudSync;
+  final bool reviewMetadataBeforeSave;
   final bool apiKeySaved;
   final AiProvider aiProvider;
   final Map<String, String> activeApiKeyIds;
@@ -1091,6 +1161,7 @@ class SecuritySettings {
     bool? appLockEnabled,
     bool? localDbEncryption,
     bool? e2eeCloudSync,
+    bool? reviewMetadataBeforeSave,
     bool? apiKeySaved,
     AiProvider? aiProvider,
     Map<String, String>? activeApiKeyIds,
@@ -1101,6 +1172,8 @@ class SecuritySettings {
       appLockEnabled: appLockEnabled ?? this.appLockEnabled,
       localDbEncryption: localDbEncryption ?? this.localDbEncryption,
       e2eeCloudSync: e2eeCloudSync ?? this.e2eeCloudSync,
+      reviewMetadataBeforeSave:
+          reviewMetadataBeforeSave ?? this.reviewMetadataBeforeSave,
       apiKeySaved: apiKeySaved ?? this.apiKeySaved,
       aiProvider: aiProvider ?? this.aiProvider,
       activeApiKeyIds: activeApiKeyIds ?? this.activeApiKeyIds,
@@ -1114,6 +1187,7 @@ class SecuritySettings {
       'appLockEnabled': appLockEnabled,
       'localDbEncryption': localDbEncryption,
       'e2eeCloudSync': e2eeCloudSync,
+      'reviewMetadataBeforeSave': reviewMetadataBeforeSave,
       'aiProvider': aiProvider.id,
       'activeApiKeyIds': activeApiKeyIds,
       'language': language.code,
@@ -1129,6 +1203,7 @@ class SecuritySettings {
       appLockEnabled: json['appLockEnabled'] == true,
       localDbEncryption: json['localDbEncryption'] != false,
       e2eeCloudSync: json['e2eeCloudSync'] == true,
+      reviewMetadataBeforeSave: json['reviewMetadataBeforeSave'] == true,
       apiKeySaved: apiKeySaved,
       aiProvider: AiProviderStorage.fromId(json['aiProvider']?.toString()),
       activeApiKeyIds: _stringMapFromJson(json['activeApiKeyIds']),
@@ -1413,8 +1488,8 @@ List<String> _genericTopicTags(String text, Set<String> existingTags) {
 
   final rankedTokens = tokenScores.entries.toList()..sort(compareTagsByScore);
   final rankedPhrases = phraseScores.entries.toList()..sort(compareTagsByScore);
-  final result = <String>[...rankedTokens.take(6).map((entry) => entry.key)];
-  for (final phrase in rankedPhrases.take(2).map((entry) => entry.key)) {
+  final result = <String>[...rankedTokens.take(5).map((entry) => entry.key)];
+  for (final phrase in rankedPhrases.take(1).map((entry) => entry.key)) {
     if (!result.contains(phrase)) {
       result.add(phrase);
     }
@@ -1423,9 +1498,24 @@ List<String> _genericTopicTags(String text, Set<String> existingTags) {
 }
 
 List<String> _tagTokensFromText(String text) {
+  final cleanedText = text
+      .replaceAll(
+        RegExp(
+          r'https?:\/\/\S+|www\.\S+|\S+\.(?:com|net|org|io|dev|co|kr)\S*',
+          caseSensitive: false,
+        ),
+        ' ',
+      )
+      .replaceAll(
+        RegExp(
+          r'\b[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}\b',
+          caseSensitive: false,
+        ),
+        ' ',
+      );
   final tokenPattern = RegExp(r'[A-Za-z][A-Za-z0-9+#.-]{2,}|[가-힣]{2,}');
   return tokenPattern
-      .allMatches(text)
+      .allMatches(cleanedText)
       .map((match) => _normalizeTagToken(match.group(0) ?? ''))
       .where((token) => token.isNotEmpty)
       .toList();
@@ -1437,16 +1527,25 @@ String _normalizeTagToken(String raw) {
     RegExp(r'^[^a-z0-9가-힣+#.-]+|[^a-z0-9가-힣+#.-]+$'),
     '',
   );
+  if (_looksLikeNoiseTag(token)) {
+    return '';
+  }
   if (!RegExp(r'[가-힣]').hasMatch(token)) {
     return token;
   }
 
   const suffixes = [
+    '것입니다',
+    '있습니다',
     '입니다',
     '합니다',
+    '했습니다',
+    '했지만',
     '해주세요',
     '알려줘',
     '인가요',
+    '이에요',
+    '예요',
     '이라는',
     '들은',
     '에서',
@@ -1461,9 +1560,15 @@ String _normalizeTagToken(String raw) {
     '하고',
     '이며',
     '에는',
+    '으로는',
+    '에서는',
     '해줘',
+    '할까요',
+    '할까',
     '까요',
     '나요',
+    '어요',
+    '겠니',
     '은',
     '는',
     '이',
@@ -1492,11 +1597,16 @@ String _normalizeTagToken(String raw) {
       }
     }
   }
+  if (_looksLikeNoiseTag(token)) {
+    return '';
+  }
   return token;
 }
 
 bool _isUsefulTagToken(String token) {
-  if (token.length < 2 || RegExp(r'^\d+$').hasMatch(token)) {
+  if (token.length < 2 ||
+      RegExp(r'^\d+$').hasMatch(token) ||
+      _looksLikeNoiseTag(token)) {
     return false;
   }
   const stopWords = {
@@ -1519,6 +1629,21 @@ bool _isUsefulTagToken(String token) {
     'question',
     'user',
     'assistant',
+    'currently',
+    'experiencing',
+    'usually',
+    'temporary',
+    'denied',
+    'access',
+    'contact',
+    'support',
+    'project',
+    'platform',
+    'account',
+    'https',
+    'http',
+    'www',
+    'com',
     'test',
     'error',
     'model',
@@ -1541,8 +1666,12 @@ bool _isUsefulTagToken(String token) {
     '뭐야',
     '어떻게',
     '어떤',
+    '어때',
+    '어디일까',
     '있어',
     '없어',
+    '있습니다',
+    '것입니다',
     '가능',
     '중요',
     '관리',
@@ -1556,10 +1685,17 @@ bool _isUsefulTagToken(String token) {
     '대해',
     '하면',
     '할까',
+    '변할까',
     '하나',
     '하나요',
     '해주세요',
     '알려줘',
+    '그렇다면',
+    '그러니까',
+    '따라서',
+    '또한',
+    '우리',
+    '삶',
     '그리고',
     '하지만',
     '그러면',
@@ -1574,6 +1710,70 @@ bool _isUsefulTagToken(String token) {
   return !stopWords.contains(token);
 }
 
+bool _isUsefulStoredTag(String rawTag) {
+  var tag = rawTag
+      .trim()
+      .replaceAll(RegExp(r'^#+'), '')
+      .toLowerCase()
+      .replaceAll(RegExp(r'\s+'), '-')
+      .replaceAll(RegExp(r'[.]+$'), '');
+  tag = tag.replaceAll(RegExp(r'^[^a-z0-9가-힣+#-]+|[^a-z0-9가-힣+#-]+$'), '');
+  if (tag.isEmpty || _looksLikeNoiseTag(tag)) {
+    return false;
+  }
+
+  const protectedTags = {
+    'api-key',
+    'hot-reload',
+    'hot-restart',
+    'local-first',
+    'llm-wiki',
+  };
+  if (protectedTags.contains(tag)) {
+    return true;
+  }
+
+  final parts = tag.split('-').where((part) => part.isNotEmpty).toList();
+  if (parts.length > 1) {
+    return parts.every(_isUsefulTagToken);
+  }
+  return _isUsefulTagToken(tag);
+}
+
+bool _looksLikeNoiseTag(String tag) {
+  if (tag.isEmpty) {
+    return true;
+  }
+  final lower = tag.toLowerCase();
+  if (lower.endsWith('.') || lower.contains('://')) {
+    return true;
+  }
+  if (RegExp(
+    r'(^|[-.])(com|net|org|io|dev|co|kr)($|[-.])',
+    caseSensitive: false,
+  ).hasMatch(lower)) {
+    return true;
+  }
+  if (RegExp(
+    r'[a-z0-9-]+\.(?:com|net|org|io|dev|co|kr)',
+    caseSensitive: false,
+  ).hasMatch(lower)) {
+    return true;
+  }
+  return false;
+}
+
+bool _looksLikeAssistantFailureContent(String text) {
+  final lower = text.toLowerCase();
+  return lower.contains('ai 답변 생성에 실패') ||
+      lower.contains('api 키가 아직 저장되어 있지 않아') ||
+      lower.contains('your project has been denied access') ||
+      lower.contains('please contact support') ||
+      lower.contains('currently experiencing high demand') ||
+      lower.contains('api key was rejected') ||
+      lower.contains('invalid api key');
+}
+
 class WikiRepository extends ChangeNotifier {
   WikiRepository()
     : settings = const SecuritySettings(
@@ -1581,6 +1781,7 @@ class WikiRepository extends ChangeNotifier {
         appLockEnabled: false,
         localDbEncryption: true,
         e2eeCloudSync: false,
+        reviewMetadataBeforeSave: false,
         apiKeySaved: false,
       ) {
     projects = _defaultProjects();
@@ -1656,11 +1857,23 @@ class WikiRepository extends ChangeNotifier {
   }
 
   List<String> get allTags {
-    return conversations
-        .expand((conversation) => conversation.tags)
-        .toSet()
-        .toList()
-      ..sort();
+    return tagUsage.map((entry) => entry.key).toList();
+  }
+
+  List<MapEntry<String, int>> get tagUsage {
+    final counts = <String, int>{};
+    for (final conversation in conversations) {
+      for (final tag in conversation.tags) {
+        counts[tag] = (counts[tag] ?? 0) + 1;
+      }
+    }
+    return counts.entries.toList()..sort((a, b) {
+      final countCompare = b.value.compareTo(a.value);
+      if (countCompare != 0) {
+        return countCompare;
+      }
+      return a.key.compareTo(b.key);
+    });
   }
 
   ProjectSpace createProject({required String name, String description = ''}) {
@@ -2149,12 +2362,20 @@ class WikiRepository extends ChangeNotifier {
   Future<CaptureResult> createConversation({
     required String projectId,
     required String prompt,
+    String? reviewedTitle,
+    List<String>? reviewedTags,
+    bool metadataReviewed = false,
   }) async {
     final sanitizedPrompt = settings.maskSensitiveInfo
         ? maskSensitive(prompt)
         : prompt.trim();
     final now = DateTime.now();
-    final title = _titleFromPrompt(sanitizedPrompt);
+    final title = reviewedTitle == null || reviewedTitle.trim().isEmpty
+        ? _titleFromPrompt(sanitizedPrompt)
+        : reviewedTitle.trim();
+    final tags = reviewedTags == null
+        ? _tagsFromPrompt(sanitizedPrompt)
+        : _normalizeTags(reviewedTags);
     final l = AppText.of(settings.language);
     CaptureSaveResult result = CaptureSaveResult.answered;
     var assistantReply = '';
@@ -2197,7 +2418,8 @@ class WikiRepository extends ChangeNotifier {
       title: title,
       createdAt: now,
       updatedAt: now,
-      manualTags: _tagsFromPrompt(sanitizedPrompt),
+      manualTags: tags,
+      metadataReviewed: metadataReviewed,
       messages: [
         KnowledgeMessage(
           id: 'msg-${now.microsecondsSinceEpoch}-u',
@@ -2217,6 +2439,16 @@ class WikiRepository extends ChangeNotifier {
     await _persistSnapshot();
     notifyListeners();
     return CaptureResult(conversation: conversation, result: result);
+  }
+
+  ConversationSaveMetadata previewConversationMetadata(String prompt) {
+    final sanitizedPrompt = settings.maskSensitiveInfo
+        ? maskSensitive(prompt)
+        : prompt.trim();
+    return ConversationSaveMetadata(
+      title: _titleFromPrompt(sanitizedPrompt),
+      tags: _tagsFromPrompt(sanitizedPrompt),
+    );
   }
 
   String _readableError(Object error) {
@@ -2464,6 +2696,21 @@ class WikiRepository extends ChangeNotifier {
     return _autoTagsFromText(prompt);
   }
 
+  List<String> _normalizeTags(Iterable<String> tags) {
+    final normalized = <String>{};
+    for (final rawTag in tags) {
+      final tag = rawTag
+          .trim()
+          .replaceAll(RegExp(r'^#+'), '')
+          .toLowerCase()
+          .replaceAll(RegExp(r'\s+'), '-');
+      if (tag.isNotEmpty) {
+        normalized.add(tag);
+      }
+    }
+    return normalized.toList()..sort();
+  }
+
   String _titleFromPrompt(String prompt) {
     final clean = prompt.replaceAll(RegExp(r'\s+'), ' ').trim();
     if (clean.isEmpty) {
@@ -2473,6 +2720,21 @@ class WikiRepository extends ChangeNotifier {
     }
     return clean.length > 54 ? '${clean.substring(0, 54)}...' : clean;
   }
+}
+
+List<String> _tagsFromEditableInput(String input) {
+  final tags = <String>{};
+  for (final rawTag in input.split(RegExp(r'[,\n]'))) {
+    final tag = rawTag
+        .trim()
+        .replaceAll(RegExp(r'^#+'), '')
+        .toLowerCase()
+        .replaceAll(RegExp(r'\s+'), '-');
+    if (tag.isNotEmpty) {
+      tags.add(tag);
+    }
+  }
+  return tags.toList()..sort();
 }
 
 class WikiShell extends StatefulWidget {
@@ -2581,9 +2843,11 @@ class LibraryPage extends StatefulWidget {
 
 class _LibraryPageState extends State<LibraryPage> {
   static const String _groupedProjectId = '__grouped__';
+  static const int _collapsedTagLimit = 8;
   final TextEditingController searchController = TextEditingController();
   String selectedProjectId = _groupedProjectId;
   final Set<String> selectedTags = {};
+  bool showAllTags = false;
 
   @override
   void dispose() {
@@ -2602,6 +2866,21 @@ class _LibraryPageState extends State<LibraryPage> {
       selectedTags: selectedTags,
     );
     final isGrouped = selectedProjectId == _groupedProjectId;
+    final tagUsage = widget.repository.tagUsage;
+    final collapsedTagKeys = tagUsage
+        .take(_collapsedTagLimit)
+        .map((entry) => entry.key)
+        .toSet();
+    final visibleTags = showAllTags
+        ? tagUsage
+        : tagUsage
+              .where(
+                (entry) =>
+                    collapsedTagKeys.contains(entry.key) ||
+                    selectedTags.contains(entry.key),
+              )
+              .toList();
+    final hiddenTagCount = math.max(tagUsage.length - _collapsedTagLimit, 0);
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
@@ -2644,12 +2923,13 @@ class _LibraryPageState extends State<LibraryPage> {
             });
           },
         ),
-        if (widget.repository.allTags.isNotEmpty) ...[
+        if (tagUsage.isNotEmpty) ...[
           const SizedBox(height: 8),
           Wrap(
             spacing: 8,
             runSpacing: 4,
-            children: widget.repository.allTags.map((tag) {
+            children: visibleTags.map((entry) {
+              final tag = entry.key;
               final selected = selectedTags.contains(tag);
               return FilterChip(
                 label: Text('#$tag'),
@@ -2666,6 +2946,27 @@ class _LibraryPageState extends State<LibraryPage> {
               );
             }).toList(),
           ),
+          if (tagUsage.length > _collapsedTagLimit) ...[
+            const SizedBox(height: 4),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                onPressed: () {
+                  setState(() {
+                    showAllTags = !showAllTags;
+                  });
+                },
+                icon: Icon(
+                  showAllTags
+                      ? Icons.keyboard_arrow_up
+                      : Icons.keyboard_arrow_down,
+                ),
+                label: Text(
+                  showAllTags ? l.collapseTags : l.showMoreTags(hiddenTagCount),
+                ),
+              ),
+            ),
+          ],
         ],
         const SizedBox(height: 16),
         Text(
@@ -2813,6 +3114,7 @@ class _LibraryPageState extends State<LibraryPage> {
     if (!context.mounted) {
       return;
     }
+    setState(() {});
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(l.renamed)));
@@ -2838,6 +3140,7 @@ class _LibraryPageState extends State<LibraryPage> {
     if (!context.mounted) {
       return;
     }
+    setState(() {});
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(l.moved)));
@@ -2861,12 +3164,18 @@ class _LibraryPageState extends State<LibraryPage> {
     if (!context.mounted || deleted == null) {
       return;
     }
+    setState(() {});
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(l.movedToTrash),
         action: SnackBarAction(
           label: l.undone,
-          onPressed: () => widget.repository.restoreConversation(deleted),
+          onPressed: () {
+            widget.repository.restoreConversation(deleted);
+            if (mounted) {
+              setState(() {});
+            }
+          },
         ),
       ),
     );
@@ -2890,6 +3199,7 @@ class _LibraryPageState extends State<LibraryPage> {
     if (!context.mounted) {
       return;
     }
+    setState(() {});
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(l.renamed)));
@@ -2921,10 +3231,15 @@ class _LibraryPageState extends State<LibraryPage> {
         content: Text(l.movedToTrash),
         action: SnackBarAction(
           label: l.undone,
-          onPressed: () => widget.repository.restoreProject(
-            deleted.project,
-            deleted.conversations,
-          ),
+          onPressed: () {
+            widget.repository.restoreProject(
+              deleted.project,
+              deleted.conversations,
+            );
+            if (mounted) {
+              setState(() {});
+            }
+          },
         ),
       ),
     );
@@ -3193,15 +3508,52 @@ Future<String?> _showTextEditDialog({
   required String label,
   required String initialValue,
 }) async {
-  final controller = TextEditingController(text: initialValue);
   final result = await showDialog<String>(
     context: context,
-    builder: (context) => AlertDialog(
-      title: Text(title),
+    builder: (context) =>
+        _TextEditDialog(title: title, label: label, initialValue: initialValue),
+  );
+  return result == null || result.trim().isEmpty ? null : result.trim();
+}
+
+class _TextEditDialog extends StatefulWidget {
+  const _TextEditDialog({
+    required this.title,
+    required this.label,
+    required this.initialValue,
+  });
+
+  final String title;
+  final String label;
+  final String initialValue;
+
+  @override
+  State<_TextEditDialog> createState() => _TextEditDialogState();
+}
+
+class _TextEditDialogState extends State<_TextEditDialog> {
+  late final TextEditingController controller;
+
+  @override
+  void initState() {
+    super.initState();
+    controller = TextEditingController(text: widget.initialValue);
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(widget.title),
       content: TextField(
         controller: controller,
         autofocus: true,
-        decoration: InputDecoration(labelText: label),
+        decoration: InputDecoration(labelText: widget.label),
         textInputAction: TextInputAction.done,
         onSubmitted: (value) => Navigator.pop(context, value.trim()),
       ),
@@ -3215,10 +3567,8 @@ Future<String?> _showTextEditDialog({
           child: Text(MaterialLocalizations.of(context).okButtonLabel),
         ),
       ],
-    ),
-  );
-  controller.dispose();
-  return result == null || result.trim().isEmpty ? null : result.trim();
+    );
+  }
 }
 
 Future<String?> _showProjectPickerDialog({
@@ -3864,11 +4214,12 @@ class _ChatCapturePageState extends State<ChatCapturePage> {
         children: [
           _ChatTopBar(
             repository: widget.repository,
-            projectId: projectId,
+            activeConversation: activeConversation,
             onOpenRecentChats: _openRecentChats,
             onNewChat: _startNewChat,
-            onCreateProject: _openCreateProjectDialog,
-            onProjectSelected: _selectProject,
+            onRenameConversation: _renameActiveConversation,
+            onMoveConversation: _moveActiveConversation,
+            onDeleteConversation: _deleteActiveConversation,
           ),
           Expanded(
             child: ListView(
@@ -3929,6 +4280,13 @@ class _ChatCapturePageState extends State<ChatCapturePage> {
       return;
     }
     final l = AppText.of(widget.repository.settings.language);
+    ConversationSaveMetadata? reviewedMetadata;
+    if (widget.repository.settings.reviewMetadataBeforeSave) {
+      reviewedMetadata = await _showMetadataReviewDialog(prompt);
+      if (!mounted || reviewedMetadata == null) {
+        return;
+      }
+    }
     setState(() {
       isSaving = true;
     });
@@ -3936,6 +4294,9 @@ class _ChatCapturePageState extends State<ChatCapturePage> {
       final result = await widget.repository.createConversation(
         projectId: projectId!,
         prompt: prompt,
+        reviewedTitle: reviewedMetadata?.title,
+        reviewedTags: reviewedMetadata?.tags,
+        metadataReviewed: reviewedMetadata != null,
       );
       if (!mounted) {
         return;
@@ -3959,6 +4320,19 @@ class _ChatCapturePageState extends State<ChatCapturePage> {
         });
       }
     }
+  }
+
+  Future<ConversationSaveMetadata?> _showMetadataReviewDialog(
+    String prompt,
+  ) async {
+    final draft = widget.repository.previewConversationMetadata(prompt);
+    return showDialog<ConversationSaveMetadata>(
+      context: context,
+      builder: (context) => _MetadataReviewDialog(
+        draft: draft,
+        language: widget.repository.settings.language,
+      ),
+    );
   }
 
   void _startNewChat() {
@@ -3986,6 +4360,110 @@ class _ChatCapturePageState extends State<ChatCapturePage> {
 
   void _openRecentChats() {
     _scaffoldKey.currentState?.openDrawer();
+  }
+
+  Future<void> _renameActiveConversation() async {
+    final conversation = activeConversation;
+    if (conversation == null) {
+      return;
+    }
+    final l = AppText.of(widget.repository.settings.language);
+    final title = await _showTextEditDialog(
+      context: context,
+      title: l.rename,
+      label: l.conversationTitle,
+      initialValue: conversation.title,
+    );
+    if (title == null || !mounted) {
+      return;
+    }
+    widget.repository.renameConversation(
+      conversationId: conversation.id,
+      title: title,
+    );
+    setState(() {
+      activeConversation =
+          widget.repository.conversationById(conversation.id) ??
+          conversation.copyWith(title: title, updatedAt: DateTime.now());
+    });
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(l.renamed)));
+  }
+
+  Future<void> _moveActiveConversation() async {
+    final conversation = activeConversation;
+    if (conversation == null) {
+      return;
+    }
+    final l = AppText.of(widget.repository.settings.language);
+    final selectedProjectId = await _showProjectPickerDialog(
+      context: context,
+      repository: widget.repository,
+      currentProjectId: conversation.projectId,
+    );
+    if (selectedProjectId == null || !mounted) {
+      return;
+    }
+    widget.repository.moveConversation(
+      conversationId: conversation.id,
+      projectId: selectedProjectId,
+    );
+    setState(() {
+      projectId = selectedProjectId;
+      drawerProjectFilterId = selectedProjectId;
+      activeConversation =
+          widget.repository.conversationById(conversation.id) ??
+          conversation.copyWith(
+            projectId: selectedProjectId,
+            updatedAt: DateTime.now(),
+          );
+    });
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(l.moved)));
+  }
+
+  Future<void> _deleteActiveConversation() async {
+    final conversation = activeConversation;
+    if (conversation == null) {
+      return;
+    }
+    final l = AppText.of(widget.repository.settings.language);
+    final confirmed = await _confirm(
+      context: context,
+      title: l.deleteConversation,
+      message: l.deleteConversationConfirm,
+      confirmLabel: l.moveToTrash,
+    );
+    if (!confirmed || !mounted) {
+      return;
+    }
+    final deleted = widget.repository.deleteConversation(conversation.id);
+    if (deleted == null) {
+      return;
+    }
+    setState(() {
+      activeConversation = null;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(l.movedToTrash),
+        action: SnackBarAction(
+          label: l.undone,
+          onPressed: () {
+            widget.repository.restoreConversation(deleted);
+            if (mounted) {
+              setState(() {
+                activeConversation = deleted;
+                projectId = deleted.projectId;
+                drawerProjectFilterId = deleted.projectId;
+              });
+            }
+          },
+        ),
+      ),
+    );
   }
 
   Future<void> _openCreateProjectDialog() async {
@@ -4053,6 +4531,102 @@ class _ChatCapturePageState extends State<ChatCapturePage> {
       projectId = project.id;
       activeConversation = null;
     });
+  }
+}
+
+class _MetadataReviewDialog extends StatefulWidget {
+  const _MetadataReviewDialog({required this.draft, required this.language});
+
+  final ConversationSaveMetadata draft;
+  final AppLanguage language;
+
+  @override
+  State<_MetadataReviewDialog> createState() => _MetadataReviewDialogState();
+}
+
+class _MetadataReviewDialogState extends State<_MetadataReviewDialog> {
+  late final TextEditingController titleController;
+  late final TextEditingController tagsController;
+
+  @override
+  void initState() {
+    super.initState();
+    titleController = TextEditingController(text: widget.draft.title);
+    tagsController = TextEditingController(
+      text: widget.draft.tags.map((tag) => '#$tag').join(', '),
+    );
+  }
+
+  @override
+  void dispose() {
+    titleController.dispose();
+    tagsController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppText.of(widget.language);
+    return AlertDialog(
+      title: Text(l.reviewMetadataDialogTitle),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(l.reviewMetadataDialogDescription),
+            const SizedBox(height: 14),
+            TextField(
+              key: const Key('metadata-title-field'),
+              controller: titleController,
+              decoration: InputDecoration(
+                labelText: l.generatedTitle,
+                prefixIcon: const Icon(Icons.title),
+              ),
+              textInputAction: TextInputAction.next,
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              key: const Key('metadata-tags-field'),
+              controller: tagsController,
+              minLines: 1,
+              maxLines: 3,
+              decoration: InputDecoration(
+                labelText: l.generatedTags,
+                hintText: l.tagInputHint,
+                prefixIcon: const Icon(Icons.sell_outlined),
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(l.cancel),
+        ),
+        FilledButton(
+          key: const Key('metadata-save-button'),
+          onPressed: () {
+            final title = titleController.text.trim();
+            if (title.isEmpty) {
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(content: Text(l.enterTitleFirst)));
+              return;
+            }
+            Navigator.pop(
+              context,
+              ConversationSaveMetadata(
+                title: title,
+                tags: _tagsFromEditableInput(tagsController.text),
+              ),
+            );
+          },
+          child: Text(l.confirmAndSave),
+        ),
+      ],
+    );
   }
 }
 
@@ -4135,6 +4709,11 @@ class ChatHistoryDrawer extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 16),
+              Text(
+                l.projectChatFilter,
+                style: Theme.of(context).textTheme.titleSmall,
+              ),
+              const SizedBox(height: 8),
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Row(
@@ -4266,23 +4845,6 @@ class _ChatHistoryTile extends StatelessWidget {
                   color: colorScheme.onSurfaceVariant,
                 ),
               ),
-              if (conversation.tags.isNotEmpty) ...[
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 6,
-                  runSpacing: 4,
-                  children: conversation.tags
-                      .take(3)
-                      .map(
-                        (tag) => Text(
-                          '#$tag',
-                          style: Theme.of(context).textTheme.labelMedium
-                              ?.copyWith(color: colorScheme.primary),
-                        ),
-                      )
-                      .toList(),
-                ),
-              ],
             ],
           ),
         ),
@@ -4294,21 +4856,21 @@ class _ChatHistoryTile extends StatelessWidget {
 class _ChatTopBar extends StatelessWidget {
   const _ChatTopBar({
     required this.repository,
-    required this.projectId,
+    required this.activeConversation,
     required this.onOpenRecentChats,
     required this.onNewChat,
-    required this.onCreateProject,
-    required this.onProjectSelected,
+    required this.onRenameConversation,
+    required this.onMoveConversation,
+    required this.onDeleteConversation,
   });
 
-  static const String _newProjectMenuValue = '__new_project__';
-
   final WikiRepository repository;
-  final String? projectId;
+  final Conversation? activeConversation;
   final VoidCallback onOpenRecentChats;
   final VoidCallback onNewChat;
-  final VoidCallback onCreateProject;
-  final ValueChanged<String> onProjectSelected;
+  final VoidCallback onRenameConversation;
+  final VoidCallback onMoveConversation;
+  final VoidCallback onDeleteConversation;
 
   @override
   Widget build(BuildContext context) {
@@ -4362,39 +4924,57 @@ class _ChatTopBar extends StatelessWidget {
             icon: const Icon(Icons.ios_share_outlined),
           ),
           PopupMenuButton<String>(
-            tooltip: l.project,
+            tooltip: l.manage,
             icon: const Icon(Icons.more_horiz),
-            initialValue: projectId,
             onSelected: (value) {
-              if (value == _newProjectMenuValue) {
-                onCreateProject();
-                return;
+              switch (value) {
+                case 'rename':
+                  onRenameConversation();
+                case 'move':
+                  onMoveConversation();
+                case 'delete':
+                  onDeleteConversation();
               }
-              onProjectSelected(value);
             },
             itemBuilder: (context) {
-              return [
-                ...repository.projects.map(
-                  (project) => PopupMenuItem<String>(
-                    value: project.id,
-                    child: Row(
-                      children: [
-                        Icon(Icons.folder_outlined, color: project.color),
-                        const SizedBox(width: 8),
-                        Text(l.projectName(project.id, project.name)),
-                      ],
+              final colorScheme = Theme.of(context).colorScheme;
+              if (activeConversation == null) {
+                return [
+                  PopupMenuItem<String>(
+                    enabled: false,
+                    child: ListTile(
+                      leading: const Icon(Icons.info_outline),
+                      title: Text(l.selectChatFirst),
                     ),
                   ),
-                ),
-                const PopupMenuDivider(),
+                ];
+              }
+              return [
                 PopupMenuItem<String>(
-                  value: _newProjectMenuValue,
-                  child: Row(
-                    children: [
-                      const Icon(Icons.create_new_folder_outlined),
-                      const SizedBox(width: 8),
-                      Text(l.newProject),
-                    ],
+                  value: 'rename',
+                  child: ListTile(
+                    leading: const Icon(Icons.edit_outlined),
+                    title: Text(l.rename),
+                  ),
+                ),
+                PopupMenuItem<String>(
+                  value: 'move',
+                  child: ListTile(
+                    leading: const Icon(Icons.drive_file_move_outlined),
+                    title: Text(l.moveConversation),
+                  ),
+                ),
+                PopupMenuItem<String>(
+                  value: 'delete',
+                  child: ListTile(
+                    leading: Icon(
+                      Icons.delete_outline,
+                      color: colorScheme.error,
+                    ),
+                    title: Text(
+                      l.moveToTrash,
+                      style: TextStyle(color: colorScheme.error),
+                    ),
                   ),
                 ),
               ];
@@ -4737,7 +5317,10 @@ class _ChatComposer extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   OutlinedButton.icon(
-                    onPressed: onCreateProject,
+                    onPressed: () {
+                      Navigator.pop(context);
+                      onCreateProject();
+                    },
                     icon: const Icon(Icons.create_new_folder_outlined),
                     label: Text(l.newProject),
                   ),
@@ -5083,6 +5666,18 @@ class _SecurityPageState extends State<SecurityPage> {
           },
         ),
         _SecuritySwitch(
+          title: l.reviewMetadataTitle,
+          subtitle: l.reviewMetadataSubtitle,
+          value: settings.reviewMetadataBeforeSave,
+          icon: Icons.fact_check_outlined,
+          onChanged: (value) {
+            widget.repository.updateSettings(
+              settings.copyWith(reviewMetadataBeforeSave: value),
+            );
+            setState(() {});
+          },
+        ),
+        _SecuritySwitch(
           title: l.appLockTitle,
           subtitle: l.appLockSubtitle,
           value: settings.appLockEnabled,
@@ -5117,23 +5712,6 @@ class _SecurityPageState extends State<SecurityPage> {
             );
             setState(() {});
           },
-        ),
-        const SizedBox(height: 16),
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(14),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  l.implementationBoundary,
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 8),
-                Text(l.implementationBoundaryBody),
-              ],
-            ),
-          ),
         ),
       ],
     );
