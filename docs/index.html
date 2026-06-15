@@ -382,10 +382,29 @@
 
       .evidence-shot {
         display: block;
-        width: min(640px, 100%);
+        width: 100%;
+        max-height: 250px;
+        object-fit: cover;
+        object-position: left top;
         border: 1px solid var(--line);
         border-radius: 8px;
         box-shadow: 0 24px 62px rgb(24 32 28 / 18%);
+      }
+
+      .evidence-stack {
+        width: min(640px, 100%);
+        display: grid;
+        gap: 12px;
+      }
+
+      .evidence-item {
+        margin: 0;
+      }
+
+      .evidence-item figcaption {
+        margin-top: 6px;
+        color: var(--muted);
+        font-size: 15px;
       }
 
       .decision:nth-child(1) {
@@ -590,19 +609,38 @@
             과정을 Obsidian Vault에 저장해, 다시 찾을 수 있는 개발 기록으로
             남겼다.
           </p>
+          <p>
+            또한 프로젝트 안에 SKILL.md 기반 작업 규칙을 두어 큰 수정이 필요한
+            순간에는 변경 범위와 영향을 먼저 확인하도록 했다. 즉, AI 대화는
+            기록으로 남기고, 반복 작업 방식은 스킬 문서로 표준화했다.
+          </p>
           <div class="chips">
             <span class="chip">Codex Logs</span>
             <span class="chip">Obsidian Vault</span>
+            <span class="chip">SKILL.md</span>
+            <span class="chip">작업 규칙 표준화</span>
             <span class="chip">작업 대화 저장</span>
-            <span class="chip">프로젝트별 지식화</span>
           </div>
         </div>
         <div class="visual">
-          <img
-            class="evidence-shot"
-            src="assets/llm-wiki-codex-obsidian-log.png"
-            alt="Obsidian Vault에 저장된 LLM Wiki 프로젝트 Codex 로그 화면"
-          />
+          <div class="evidence-stack">
+            <figure class="evidence-item">
+              <img
+                class="evidence-shot"
+                src="assets/llm-wiki-codex-obsidian-log.png"
+                alt="Obsidian Vault에 저장된 LLM Wiki 프로젝트 Codex 로그 화면"
+              />
+              <figcaption>Codex 작업 대화를 Obsidian Vault에 프로젝트별 로그로 저장</figcaption>
+            </figure>
+            <figure class="evidence-item">
+              <img
+                class="evidence-shot"
+                src="assets/skill-md-confirm-large-edits.png"
+                alt="프로젝트에 작성된 confirm-large-edits SKILL.md 화면"
+              />
+              <figcaption>SKILL.md로 큰 수정 전 확인 규칙을 문서화해 작업 품질 관리</figcaption>
+            </figure>
+          </div>
         </div>
       </section>
 
