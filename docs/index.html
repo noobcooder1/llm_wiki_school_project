@@ -530,6 +530,7 @@
       <a href="#slide-10">10</a>
       <a href="#slide-11">11</a>
       <a href="#slide-12">12</a>
+      <a href="#slide-13">13</a>
     </nav>
     <main class="deck">
       <section class="slide" id="slide-1">
@@ -888,6 +889,55 @@
       </section>
 
       <section class="slide" id="slide-12">
+        <div>
+          <div class="eyebrow">Structure & Testing</div>
+          <h2>프로젝트는 앱 구조와 발표 산출물을 분리하고 핵심 흐름을 반복 검증했다</h2>
+          <p>
+            구현 코드는 Flutter 앱 본체와 플랫폼별 실행 환경으로 나누고,
+            발표자료와 ADR, WBS, 데모 영상은 GitHub Pages용 docs 폴더에서
+            관리했다. 테스트는 저장, 검색, API 키, 내보내기처럼 실제 사용자가
+            거치는 흐름을 중심으로 구성했다.
+          </p>
+          <div class="detail-grid">
+            <div class="detail-card accent-green">
+              <b>앱 본체</b>
+              <span>lib/main.dart에 LlmWikiApp, WikiRepository, AI Provider Client, 주요 화면을 구현했다.</span>
+            </div>
+            <div class="detail-card accent-rust">
+              <b>플랫폼 실행 환경</b>
+              <span>android, ios, web 폴더를 통해 모바일과 웹 실행 기반을 유지했다.</span>
+            </div>
+            <div class="detail-card accent-blue">
+              <b>발표 산출물</b>
+              <span>docs 폴더에서 발표자료, ADR 목록, WBS 보기 페이지, 데모 영상을 함께 배포했다.</span>
+            </div>
+            <div class="detail-card accent-gold">
+              <b>작업 기록과 자동화</b>
+              <span>scripts와 skills 폴더로 Obsidian 로그 저장, 데모 제작, 큰 수정 확인 흐름을 보조했다.</span>
+            </div>
+          </div>
+        </div>
+        <div class="mock-panel">
+          <div class="mock-row">
+            <strong>자동 테스트</strong>
+            <span>test/widget_test.dart에서 저장 복원, 프로젝트/대화 관리, 휴지통, 태그 생성, API 키 링, Provider fallback, 마크다운 내보내기, 언어 전환을 확인했다.</span>
+          </div>
+          <div class="mock-row">
+            <strong>정적 점검</strong>
+            <span>README 기준으로 flutter analyze와 flutter test를 정적 분석 및 자동 테스트 명령으로 사용했다.</span>
+          </div>
+          <div class="mock-row">
+            <strong>수동 점검</strong>
+            <span>Android 에뮬레이터에서 한국어 입력, API 키 저장, 질문/응답 저장, 화면 이동을 확인했다.</span>
+          </div>
+          <div class="mock-row">
+            <strong>발표 검증</strong>
+            <span>GitHub Pages에서 PRD, ADR, WBS, 데모 영상 링크가 다운로드 없이 열리는지 확인했다.</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="slide" id="slide-13">
         <div>
           <div class="eyebrow">Closing</div>
           <h2>LLM Wiki는 AI 사용 기록을 다시 쓰는 지식 체계로 바꾼다</h2>
