@@ -1,0 +1,914 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LLM Wiki WBS & Gantt</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #18201c;
+        --muted: #65706a;
+        --line: #d9ded7;
+        --paper: #f7f5ef;
+        --surface: #ffffff;
+        --green: #176b5d;
+        --mint: #cfe9df;
+        --rust: #914b32;
+        --blue: #4f5f8c;
+        --gold: #c99a2e;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
+        color: var(--ink);
+        background: var(--paper);
+      }
+
+      main {
+        width: min(1320px, calc(100% - 36px));
+        margin: 0 auto;
+        padding: 56px 0 72px;
+      }
+
+      .top-actions,
+      .summary-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+      }
+
+      .button {
+        display: inline-flex;
+        align-items: center;
+        min-height: 40px;
+        padding: 10px 14px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--surface);
+        color: var(--ink);
+        font-size: 16px;
+        font-weight: 800;
+        text-decoration: none;
+      }
+
+      .button.primary {
+        border-color: var(--green);
+        background: var(--green);
+        color: #fff;
+      }
+
+      .eyebrow {
+        margin-top: 36px;
+        color: var(--green);
+        font-size: 15px;
+        font-weight: 800;
+        letter-spacing: 0;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        max-width: 960px;
+        margin: 12px 0 18px;
+        font-size: clamp(42px, 7vw, 76px);
+        line-height: 1.06;
+        letter-spacing: 0;
+      }
+
+      .lead {
+        max-width: 980px;
+        margin: 0 0 26px;
+        color: #354039;
+        font-size: clamp(20px, 2.2vw, 27px);
+        line-height: 1.55;
+      }
+
+      .summary-grid {
+        margin: 28px 0 24px;
+      }
+
+      .summary-card {
+        min-width: 150px;
+        padding: 16px 18px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--surface);
+      }
+
+      .summary-card strong {
+        display: block;
+        font-size: 32px;
+        line-height: 1;
+      }
+
+      .summary-card span {
+        display: block;
+        margin-top: 8px;
+        color: var(--muted);
+        font-size: 15px;
+      }
+
+      .table-wrap {
+        overflow: auto;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--surface);
+        box-shadow: 0 22px 58px rgb(24 32 28 / 10%);
+      }
+
+      table {
+        width: 100%;
+        min-width: 1180px;
+        border-collapse: collapse;
+      }
+
+      thead th {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        background: #eef3ef;
+        color: #2f3d35;
+        font-size: 14px;
+        text-align: left;
+      }
+
+      th,
+      td {
+        padding: 10px 12px;
+        border-bottom: 1px solid var(--line);
+        vertical-align: middle;
+      }
+
+      tbody tr:last-child td {
+        border-bottom: 0;
+      }
+
+      .wbs {
+        width: 84px;
+        color: #33423a;
+        font-weight: 800;
+      }
+
+      .task {
+        min-width: 330px;
+        font-weight: 700;
+      }
+
+      .depth-1 {
+        padding-left: 26px;
+      }
+
+      .depth-2 {
+        padding-left: 48px;
+        font-weight: 600;
+      }
+
+      .owner {
+        width: 84px;
+        color: var(--muted);
+      }
+
+      .num {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .status {
+        display: inline-flex;
+        align-items: center;
+        min-height: 30px;
+        padding: 5px 9px;
+        border-radius: 999px;
+        background: #eef3ef;
+        color: #405048;
+        font-size: 13px;
+        font-weight: 800;
+        white-space: nowrap;
+      }
+
+      .status.completed {
+        background: #e0f2ea;
+        color: #0f6b55;
+      }
+
+      .status.in-progress {
+        background: #fff0cc;
+        color: #7a5a08;
+      }
+
+      .status.milestone {
+        background: #e8ebfb;
+        color: var(--blue);
+      }
+
+      .section-row td {
+        background: #dfe4df;
+        color: #24312b;
+        font-weight: 900;
+      }
+
+      .milestone-row td {
+        background: #edf5fa;
+        color: #243e78;
+        font-weight: 900;
+      }
+
+      .gantt-header {
+        min-width: 360px;
+      }
+
+      .timeline {
+        position: relative;
+        height: 24px;
+      }
+
+      .week-marker {
+        position: absolute;
+        top: 0;
+        transform: translateX(-50%);
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 800;
+        white-space: nowrap;
+      }
+
+      .gantt-cell {
+        min-width: 360px;
+      }
+
+      .gantt-track {
+        position: relative;
+        height: 18px;
+        border-radius: 999px;
+        background:
+          repeating-linear-gradient(
+            90deg,
+            #f5f6f2 0,
+            #f5f6f2 calc(100% / 40 - 1px),
+            #e4e8e2 calc(100% / 40),
+            #e4e8e2 calc(100% / 40)
+          );
+        overflow: hidden;
+      }
+
+      .bar {
+        position: absolute;
+        top: 4px;
+        height: 10px;
+        border-radius: 999px;
+        background: var(--green);
+      }
+
+      .bar.in-progress {
+        background: var(--gold);
+      }
+
+      .bar.completed {
+        background: var(--green);
+      }
+
+      .milestone {
+        position: absolute;
+        top: 3px;
+        width: 12px;
+        height: 12px;
+        transform: translateX(-50%) rotate(45deg);
+        border-radius: 2px;
+        background: var(--blue);
+      }
+
+      .note {
+        margin-top: 16px;
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.5;
+      }
+
+      @media (max-width: 760px) {
+        main {
+          width: min(100% - 28px, 1320px);
+          padding-top: 36px;
+        }
+
+        .summary-card {
+          flex: 1 1 140px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="top-actions">
+        <a class="button" href="../index.html#slide-11">발표자료로 돌아가기</a>
+        <a class="button" href="../LLM_Wiki_WBS_Gantt.xlsx">원본 Excel 다운로드</a>
+      </div>
+
+      <div class="eyebrow">Updated WBS & Gantt Chart</div>
+      <h1>LLM Wiki WBS</h1>
+      <p class="lead">
+        최신 WBS를 브라우저에서 바로 확인할 수 있도록 표와 간트 차트 형태로
+        정리했습니다. 발표 중에는 별도 다운로드 없이 이 화면에서 일정과 진행률을
+        함께 보여줄 수 있습니다.
+      </p>
+
+      <section class="summary-grid" aria-label="WBS 요약">
+        <div class="summary-card"><strong>44</strong><span>관리 항목</span></div>
+        <div class="summary-card"><strong>37</strong><span>완료</span></div>
+        <div class="summary-card"><strong>3</strong><span>진행 중</span></div>
+        <div class="summary-card"><strong>4</strong><span>마일스톤</span></div>
+        <div class="summary-card"><strong>95%</strong><span>평균 진행률</span></div>
+      </section>
+
+      <section class="table-wrap" aria-label="WBS 표">
+        <table>
+          <thead>
+            <tr>
+              <th>WBS</th>
+              <th>Task</th>
+              <th>Owner</th>
+              <th>Status</th>
+              <th>Start Date</th>
+              <th>Finish Date</th>
+              <th>W.</th>
+              <th>%</th>
+              <th class="gantt-header">
+                <div class="timeline"><span class="week-marker" style="left: 0%">5/12</span>
+<span class="week-marker" style="left: 17.94871794871795%">5/19</span>
+<span class="week-marker" style="left: 35.8974358974359%">5/26</span>
+<span class="week-marker" style="left: 53.84615384615385%">6/2</span>
+<span class="week-marker" style="left: 71.7948717948718%">6/9</span>
+<span class="week-marker" style="left: 89.74358974358975%">6/16</span></div>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="section-row">
+      <td class="wbs">1</td>
+      <td class="task depth-0">기획 및 설계</td>
+      <td class="owner"></td>
+      <td><span class="status -">-</span></td>
+      <td></td>
+      <td></td>
+      <td class="num"></td>
+      <td class="num"></td>
+      <td class="gantt-cell"><div class="gantt-track"></div></td>
+    </tr>
+<tr class="">
+      <td class="wbs">1.1</td>
+      <td class="task depth-1">프로젝트 기획</td>
+      <td class="owner"></td>
+      <td><span class="status completed">Completed</span></td>
+      <td>2026-05-12</td>
+      <td>2026-05-14</td>
+      <td class="num">3</td>
+      <td class="num">100</td>
+      <td class="gantt-cell"><div class="gantt-track"><span class="bar completed" style="left: 0%; width: 7.5%"></span></div></td>
+    </tr>
+<tr class="">
+      <td class="wbs">1.1.1</td>
+      <td class="task depth-2">PRD 분석 및 핵심 사용자 흐름 정의</td>
+      <td class="owner"></td>
+      <td><span class="status completed">Completed</span></td>
+      <td>2026-05-12</td>
+      <td>2026-05-13</td>
+      <td class="num">2</td>
+      <td class="num">100</td>
+      <td class="gantt-cell"><div class="gantt-track"><span class="bar completed" style="left: 0%; width: 5%"></span></div></td>
+    </tr>
+<tr class="">
+      <td class="wbs">1.1.2</td>
+      <td class="task depth-2">MoSCoW / 보안 요구사항 정리</td>
+      <td class="owner"></td>
+      <td><span class="status completed">Completed</span></td>
+      <td>2026-05-13</td>
+      <td>2026-05-14</td>
+      <td class="num">2</td>
+      <td class="num">100</td>
+      <td class="gantt-cell"><div class="gantt-track"><span class="bar completed" style="left: 2.5%; width: 5%"></span></div></td>
+    </tr>
+<tr class="">
+      <td class="wbs">1.2</td>
+      <td class="task depth-1">아키텍처 의사결정 정리</td>
+      <td class="owner"></td>
+      <td><span class="status completed">Completed</span></td>
+      <td>2026-05-14</td>
+      <td>2026-05-20</td>
+      <td class="num">7</td>
+      <td class="num">100</td>
+      <td class="gantt-cell"><div class="gantt-track"><span class="bar completed" style="left: 5%; width: 17.5%"></span></div></td>
+    </tr>
+<tr class="">
+      <td class="wbs">1.2.1</td>
+      <td class="task depth-2">로컬 우선 / BYOK / 마크다운 ADR 작성</td>
+      <td class="owner"></td>
+      <td><span class="status completed">Completed</span></td>
+      <td>2026-05-14</td>
+      <td>2026-05-17</td>
+      <td class="num">4</td>
+      <td class="num">100</td>
+      <td class="gantt-cell"><div class="gantt-track"><span class="bar completed" style="left: 5%; width: 10%"></span></div></td>
+    </tr>
+<tr class="">
+      <td class="wbs">1.2.2</td>
+      <td class="task depth-2">Flutter / 다중 플랫폼 개발환경 ADR 작성</td>
+      <td class="owner"></td>
+      <td><span class="status completed">Completed</span></td>
+      <td>2026-05-17</td>
+      <td>2026-05-20</td>
+      <td class="num">4</td>
+      <td class="num">100</td>
+      <td class="gantt-cell"><div class="gantt-track"><span class="bar completed" style="left: 12.5%; width: 10%"></span></div></td>
+    </tr>
+<tr class="">
+      <td class="wbs">1.3</td>
+      <td class="task depth-1">발표 및 프로젝트 문서화</td>
+      <td class="owner"></td>
+      <td><span class="status completed">Completed</span></td>
+      <td>2026-05-18</td>
+      <td>2026-05-25</td>
+      <td class="num">8</td>
+      <td class="num">100</td>
+      <td class="gantt-cell"><div class="gantt-track"><span class="bar completed" style="left: 15%; width: 20%"></span></div></td>
+    </tr>
+<tr class="">
+      <td class="wbs">1.3.1</td>
+      <td class="task depth-2">GitHub Pages 발표자료 / WBS / 데모 방향 정리</td>
+      <td class="owner"></td>
+      <td><span class="status completed">Completed</span></td>
+      <td>2026-05-18</td>
+      <td>2026-05-25</td>
+      <td class="num">8</td>
+      <td class="num">100</td>
+      <td class="gantt-cell"><div class="gantt-track"><span class="bar completed" style="left: 15%; width: 20%"></span></div></td>
+    </tr>
+<tr class="milestone-row">
+      <td class="wbs">1.4</td>
+      <td class="task depth-1">1차 산출물 점검</td>
+      <td class="owner"></td>
+      <td><span class="status milestone">Milestone</span></td>
+      <td>2026-05-25</td>
+      <td>2026-05-25</td>
+      <td class="num">1</td>
+      <td class="num">100</td>
+      <td class="gantt-cell"><div class="gantt-track"><span class="milestone" style="left: 32.5%"></span></div></td>
+    </tr>
+<tr class="section-row">
+      <td class="wbs">2</td>
+      <td class="task depth-0">앱 기반 및 로컬 데이터 구조</td>
+      <td class="owner"></td>
+      <td><span class="status -">-</span></td>
+      <td></td>
+      <td></td>
+      <td class="num"></td>
+      <td class="num"></td>
+      <td class="gantt-cell"><div class="gantt-track"></div></td>
+    </tr>
+<tr class="">
+      <td class="wbs">2.1</td>
+      <td class="task depth-1">Flutter 앱 골격 구현</td>
+      <td class="owner"></td>
+      <td><span class="status completed">Completed</span></td>
+      <td>2026-05-19</td>
+      <td>2026-05-25</td>
+      <td class="num">7</td>
+      <td class="num">100</td>
+      <td class="gantt-cell"><div class="gantt-track"><span class="bar completed" style="left: 17.5%; width: 17.5%"></span></div></td>
+    </tr>
+<tr class="">
+      <td class="wbs">2.1.1</td>
+      <td class="task depth-2">하단 탭 / 라이브러리 / AI 채팅 / 내보내기 / 설정 화면</td>
+      <td class="owner"></td>
+      <td><span class="status completed">Completed</span></td>
+      <td>2026-05-19</td>
+      <td>2026-05-23</td>
+      <td class="num">5</td>
+      <td class="num">100</td>
+      <td class="gantt-cell"><div class="gantt-track"><span class="bar completed" style="left: 17.5%; width: 12.5%"></span></div></td>
+    </tr>
+<tr class="">
+      <td class="wbs">2.1.2</td>
+      <td class="task depth-2">한국어 기본 언어 및 다국어 구조</td>
+      <td class="owner"></td>
+      <td><span class="status completed">Completed</span></td>
+      <td>2026-05-23</td>
+      <td>2026-05-25</td>
+      <td class="num">3</td>
+      <td class="num">100</td>
+      <td class="gantt-cell"><div class="gantt-track"><span class="bar completed" style="left: 27.500000000000004%; width: 7.5%"></span></div></td>
+    </tr>
+<tr class="">
+      <td class="wbs">2.2</td>
+      <td class="task depth-1">로컬 상태 저장 구현</td>
+      <td class="owner"></td>
+      <td><span class="status completed">Completed</span></td>
+      <td>2026-05-26</td>
+      <td>2026-06-02</td>
+      <td class="num">8</td>
+      <td class="num">100</td>
+      <td class="gantt-cell"><div class="gantt-track"><span class="bar completed" style="left: 35%; width: 20%"></span></div></td>
+    </tr>
+<tr class="">
+      <td class="wbs">2.2.1</td>
+      <td class="task depth-2">Project / Conversation / Message 모델 및 JSON 스냅샷</td>
+      <td class="owner"></td>
+      <td><span class="status completed">Completed</span></td>
+      <td>2026-05-26</td>
+      <td>2026-06-01</td>
+      <td class="num">7</td>
+      <td class="num">100</td>
+      <td class="gantt-cell"><div class="gantt-track"><span class="bar completed" style="left: 35%; width: 17.5%"></span></div></td>
+    </tr>
+<tr class="">
+      <td class="wbs">2.2.2</td>
+      <td class="task depth-2">Secure Storage 기반 상태 복원 / 저장</td>
+      <td class="owner"></td>
+      <td><span class="status completed">Completed</span></td>
+      <td>2026-06-01</td>
+      <td>2026-06-02</td>
+      <td class="num">2</td>
+      <td class="num">100</td>
+      <td class="gantt-cell"><div class="gantt-track"><span class="bar completed" style="left: 50%; width: 5%"></span></div></td>
+    </tr>
+<tr class="milestone-row">
+      <td class="wbs">2.3</td>
+      <td class="task depth-1">앱 기반 점검</td>
+      <td class="owner"></td>
+      <td><span class="status milestone">Milestone</span></td>
+      <td>2026-06-02</td>
+      <td>2026-06-02</td>
+      <td class="num">1</td>
+      <td class="num">100</td>
+      <td class="gantt-cell"><div class="gantt-track"><span class="milestone" style="left: 52.5%"></span></div></td>
+    </tr>
+<tr class="section-row">
+      <td class="wbs">3</td>
+      <td class="task depth-0">AI 채팅 및 Provider 연동</td>
+      <td class="owner"></td>
+      <td><span class="status -">-</span></td>
+      <td></td>
+      <td></td>
+      <td class="num"></td>
+      <td class="num"></td>
+      <td class="gantt-cell"><div class="gantt-track"></div></td>
+    </tr>
+<tr class="">
+      <td class="wbs">3.1</td>
+      <td class="task depth-1">AI Provider 추상화</td>
+      <td class="owner"></td>
+      <td><span class="status completed">Completed</span></td>
+      <td>2026-06-03</td>
+      <td>2026-06-08</td>
+      <td class="num">6</td>
+      <td class="num">100</td>
+      <td class="gantt-cell"><div class="gantt-track"><span class="bar completed" style="left: 55.00000000000001%; width: 15%"></span></div></td>
+    </tr>
+<tr class="">
+      <td class="wbs">3.1.1</td>
+      <td class="task depth-2">Gemini / GPT / Claude / Grok Client 구현</td>
+      <td class="owner"></td>
+      <td><span class="status completed">Completed</span></td>
+      <td>2026-06-03</td>
+      <td>2026-06-06</td>
+      <td class="num">4</td>
+      <td class="num">100</td>
+      <td class="gantt-cell"><div class="gantt-track"><span class="bar completed" style="left: 55.00000000000001%; width: 10%"></span></div></td>
+    </tr>
+<tr class="">
+      <td class="wbs">3.1.2</td>
+      <td class="task depth-2">모델 fallback 및 API 오류 저장 흐름</td>
+      <td class="owner"></td>
+      <td><span class="status completed">Completed</span></td>
+      <td>2026-06-06</td>
+      <td>2026-06-08</td>
+      <td class="num">3</td>
+      <td class="num">100</td>
+      <td class="gantt-cell"><div class="gantt-track"><span class="bar completed" style="left: 62.5%; width: 7.5%"></span></div></td>
+    </tr>
+<tr class="">
+      <td class="wbs">3.2</td>
+      <td class="task depth-1">API 키 링 관리</td>
+      <td class="owner"></td>
+      <td><span class="status completed">Completed</span></td>
+      <td>2026-06-08</td>
+      <td>2026-06-10</td>
+      <td class="num">3</td>
+      <td class="num">100</td>
+      <td class="gantt-cell"><div class="gantt-track"><span class="bar completed" style="left: 67.5%; width: 7.5%"></span></div></td>
+    </tr>
+<tr class="">
+      <td class="wbs">3.2.1</td>
+      <td class="task depth-2">Provider별 API 키 저장 / 마스킹 / 삭제</td>
+      <td class="owner"></td>
+      <td><span class="status completed">Completed</span></td>
+      <td>2026-06-08</td>
+      <td>2026-06-09</td>
+      <td class="num">2</td>
+      <td class="num">100</td>
+      <td class="gantt-cell"><div class="gantt-track"><span class="bar completed" style="left: 67.5%; width: 5%"></span></div></td>
+    </tr>
+<tr class="">
+      <td class="wbs">3.2.2</td>
+      <td class="task depth-2">활성 키 선택 및 Legacy OpenAI 키 마이그레이션</td>
+      <td class="owner"></td>
+      <td><span class="status completed">Completed</span></td>
+      <td>2026-06-09</td>
+      <td>2026-06-10</td>
+      <td class="num">2</td>
+      <td class="num">100</td>
+      <td class="gantt-cell"><div class="gantt-track"><span class="bar completed" style="left: 70%; width: 5%"></span></div></td>
+    </tr>
+<tr class="milestone-row">
+      <td class="wbs">3.3</td>
+      <td class="task depth-1">AI 채팅 저장 흐름 점검</td>
+      <td class="owner"></td>
+      <td><span class="status milestone">Milestone</span></td>
+      <td>2026-06-10</td>
+      <td>2026-06-10</td>
+      <td class="num">1</td>
+      <td class="num">100</td>
+      <td class="gantt-cell"><div class="gantt-track"><span class="milestone" style="left: 72.5%"></span></div></td>
+    </tr>
+<tr class="section-row">
+      <td class="wbs">4</td>
+      <td class="task depth-0">지식 라이브러리 및 관리 기능</td>
+      <td class="owner"></td>
+      <td><span class="status -">-</span></td>
+      <td></td>
+      <td></td>
+      <td class="num"></td>
+      <td class="num"></td>
+      <td class="gantt-cell"><div class="gantt-track"></div></td>
+    </tr>
+<tr class="">
+      <td class="wbs">4.1</td>
+      <td class="task depth-1">AI 대화 저장 / 탐색</td>
+      <td class="owner"></td>
+      <td><span class="status completed">Completed</span></td>
+      <td>2026-06-10</td>
+      <td>2026-06-12</td>
+      <td class="num">3</td>
+      <td class="num">100</td>
+      <td class="gantt-cell"><div class="gantt-track"><span class="bar completed" style="left: 72.5%; width: 7.5%"></span></div></td>
+    </tr>
+<tr class="">
+      <td class="wbs">4.1.1</td>
+      <td class="task depth-2">프롬프트 + AI 응답 Conversation 저장</td>
+      <td class="owner"></td>
+      <td><span class="status completed">Completed</span></td>
+      <td>2026-06-10</td>
+      <td>2026-06-11</td>
+      <td class="num">2</td>
+      <td class="num">100</td>
+      <td class="gantt-cell"><div class="gantt-track"><span class="bar completed" style="left: 72.5%; width: 5%"></span></div></td>
+    </tr>
+<tr class="">
+      <td class="wbs">4.1.2</td>
+      <td class="task depth-2">최근 채팅 Drawer 및 프로젝트 필터</td>
+      <td class="owner"></td>
+      <td><span class="status completed">Completed</span></td>
+      <td>2026-06-11</td>
+      <td>2026-06-12</td>
+      <td class="num">2</td>
+      <td class="num">100</td>
+      <td class="gantt-cell"><div class="gantt-track"><span class="bar completed" style="left: 75%; width: 5%"></span></div></td>
+    </tr>
+<tr class="">
+      <td class="wbs">4.2</td>
+      <td class="task depth-1">태그 / 검색 / 코드 지식화</td>
+      <td class="owner"></td>
+      <td><span class="status completed">Completed</span></td>
+      <td>2026-06-12</td>
+      <td>2026-06-14</td>
+      <td class="num">3</td>
+      <td class="num">100</td>
+      <td class="gantt-cell"><div class="gantt-track"><span class="bar completed" style="left: 77.5%; width: 7.5%"></span></div></td>
+    </tr>
+<tr class="">
+      <td class="wbs">4.2.1</td>
+      <td class="task depth-2">자동 태그 및 수동 태그 추가</td>
+      <td class="owner"></td>
+      <td><span class="status completed">Completed</span></td>
+      <td>2026-06-12</td>
+      <td>2026-06-13</td>
+      <td class="num">2</td>
+      <td class="num">100</td>
+      <td class="gantt-cell"><div class="gantt-track"><span class="bar completed" style="left: 77.5%; width: 5%"></span></div></td>
+    </tr>
+<tr class="">
+      <td class="wbs">4.2.2</td>
+      <td class="task depth-2">제목/본문/태그 검색, 코드 스니펫 추출, 휴지통 복원</td>
+      <td class="owner"></td>
+      <td><span class="status completed">Completed</span></td>
+      <td>2026-06-13</td>
+      <td>2026-06-14</td>
+      <td class="num">2</td>
+      <td class="num">100</td>
+      <td class="gantt-cell"><div class="gantt-track"><span class="bar completed" style="left: 80%; width: 5%"></span></div></td>
+    </tr>
+<tr class="section-row">
+      <td class="wbs">5</td>
+      <td class="task depth-0">검색, 내보내기, 보안 및 발표 산출물</td>
+      <td class="owner"></td>
+      <td><span class="status -">-</span></td>
+      <td></td>
+      <td></td>
+      <td class="num"></td>
+      <td class="num"></td>
+      <td class="gantt-cell"><div class="gantt-track"></div></td>
+    </tr>
+<tr class="">
+      <td class="wbs">5.1</td>
+      <td class="task depth-1">마크다운 / Obsidian 내보내기</td>
+      <td class="owner"></td>
+      <td><span class="status completed">Completed</span></td>
+      <td>2026-06-10</td>
+      <td>2026-06-12</td>
+      <td class="num">3</td>
+      <td class="num">100</td>
+      <td class="gantt-cell"><div class="gantt-track"><span class="bar completed" style="left: 72.5%; width: 7.5%"></span></div></td>
+    </tr>
+<tr class="">
+      <td class="wbs">5.1.1</td>
+      <td class="task depth-2">프로젝트 범위 선택형 Markdown Export</td>
+      <td class="owner"></td>
+      <td><span class="status completed">Completed</span></td>
+      <td>2026-06-10</td>
+      <td>2026-06-11</td>
+      <td class="num">2</td>
+      <td class="num">100</td>
+      <td class="gantt-cell"><div class="gantt-track"><span class="bar completed" style="left: 72.5%; width: 5%"></span></div></td>
+    </tr>
+<tr class="">
+      <td class="wbs">5.1.2</td>
+      <td class="task depth-2">Codex to Obsidian Sync 스크립트</td>
+      <td class="owner"></td>
+      <td><span class="status completed">Completed</span></td>
+      <td>2026-06-11</td>
+      <td>2026-06-12</td>
+      <td class="num">2</td>
+      <td class="num">100</td>
+      <td class="gantt-cell"><div class="gantt-track"><span class="bar completed" style="left: 75%; width: 5%"></span></div></td>
+    </tr>
+<tr class="">
+      <td class="wbs">5.2</td>
+      <td class="task depth-1">보안 및 설정 기능</td>
+      <td class="owner"></td>
+      <td><span class="status completed">Completed</span></td>
+      <td>2026-06-12</td>
+      <td>2026-06-14</td>
+      <td class="num">3</td>
+      <td class="num">100</td>
+      <td class="gantt-cell"><div class="gantt-track"><span class="bar completed" style="left: 77.5%; width: 7.5%"></span></div></td>
+    </tr>
+<tr class="">
+      <td class="wbs">5.2.1</td>
+      <td class="task depth-2">민감정보 마스킹 / 암호화 저장 토글</td>
+      <td class="owner"></td>
+      <td><span class="status completed">Completed</span></td>
+      <td>2026-06-12</td>
+      <td>2026-06-13</td>
+      <td class="num">2</td>
+      <td class="num">100</td>
+      <td class="gantt-cell"><div class="gantt-track"><span class="bar completed" style="left: 77.5%; width: 5%"></span></div></td>
+    </tr>
+<tr class="">
+      <td class="wbs">5.2.2</td>
+      <td class="task depth-2">앱 잠금 / E2EE / SQLCipher 전환 경계 문서화</td>
+      <td class="owner"></td>
+      <td><span class="status completed">Completed</span></td>
+      <td>2026-06-13</td>
+      <td>2026-06-14</td>
+      <td class="num">2</td>
+      <td class="num">100</td>
+      <td class="gantt-cell"><div class="gantt-track"><span class="bar completed" style="left: 80%; width: 5%"></span></div></td>
+    </tr>
+<tr class="">
+      <td class="wbs">5.3</td>
+      <td class="task depth-1">발표자료 및 데모 산출물</td>
+      <td class="owner"></td>
+      <td><span class="status completed">Completed</span></td>
+      <td>2026-06-10</td>
+      <td>2026-06-14</td>
+      <td class="num">5</td>
+      <td class="num">100</td>
+      <td class="gantt-cell"><div class="gantt-track"><span class="bar completed" style="left: 72.5%; width: 12.5%"></span></div></td>
+    </tr>
+<tr class="">
+      <td class="wbs">5.3.1</td>
+      <td class="task depth-2">30초 데모 영상 및 Pages 버튼 추가</td>
+      <td class="owner"></td>
+      <td><span class="status completed">Completed</span></td>
+      <td>2026-06-10</td>
+      <td>2026-06-10</td>
+      <td class="num">1</td>
+      <td class="num">100</td>
+      <td class="gantt-cell"><div class="gantt-track"><span class="bar completed" style="left: 72.5%; width: 2.5%"></span></div></td>
+    </tr>
+<tr class="">
+      <td class="wbs">5.3.2</td>
+      <td class="task depth-2">구현 기능 상세 발표자료 / 4분 30초 대본 업데이트</td>
+      <td class="owner"></td>
+      <td><span class="status completed">Completed</span></td>
+      <td>2026-06-14</td>
+      <td>2026-06-14</td>
+      <td class="num">1</td>
+      <td class="num">100</td>
+      <td class="gantt-cell"><div class="gantt-track"><span class="bar completed" style="left: 82.5%; width: 2.5%"></span></div></td>
+    </tr>
+<tr class="section-row">
+      <td class="wbs">6</td>
+      <td class="task depth-0">테스트 및 최종 발표 준비</td>
+      <td class="owner"></td>
+      <td><span class="status -">-</span></td>
+      <td></td>
+      <td></td>
+      <td class="num"></td>
+      <td class="num"></td>
+      <td class="gantt-cell"><div class="gantt-track"></div></td>
+    </tr>
+<tr class="">
+      <td class="wbs">6.1</td>
+      <td class="task depth-1">검증 및 화면 점검</td>
+      <td class="owner"></td>
+      <td><span class="status completed">Completed</span></td>
+      <td>2026-06-10</td>
+      <td>2026-06-14</td>
+      <td class="num">5</td>
+      <td class="num">100</td>
+      <td class="gantt-cell"><div class="gantt-track"><span class="bar completed" style="left: 72.5%; width: 12.5%"></span></div></td>
+    </tr>
+<tr class="">
+      <td class="wbs">6.1.1</td>
+      <td class="task depth-2">위젯 테스트 / 정적 분석 / APK 빌드 확인</td>
+      <td class="owner"></td>
+      <td><span class="status completed">Completed</span></td>
+      <td>2026-06-10</td>
+      <td>2026-06-12</td>
+      <td class="num">3</td>
+      <td class="num">100</td>
+      <td class="gantt-cell"><div class="gantt-track"><span class="bar completed" style="left: 72.5%; width: 7.5%"></span></div></td>
+    </tr>
+<tr class="">
+      <td class="wbs">6.1.2</td>
+      <td class="task depth-2">Android / GitHub Pages 화면 점검</td>
+      <td class="owner"></td>
+      <td><span class="status in-progress">In progress</span></td>
+      <td>2026-06-12</td>
+      <td>2026-06-14</td>
+      <td class="num">3</td>
+      <td class="num">80</td>
+      <td class="gantt-cell"><div class="gantt-track"><span class="bar in-progress" style="left: 77.5%; width: 7.5%"></span></div></td>
+    </tr>
+<tr class="">
+      <td class="wbs">6.2</td>
+      <td class="task depth-1">최종 발표 준비</td>
+      <td class="owner"></td>
+      <td><span class="status in-progress">In progress</span></td>
+      <td>2026-06-14</td>
+      <td>2026-06-20</td>
+      <td class="num">7</td>
+      <td class="num">45</td>
+      <td class="gantt-cell"><div class="gantt-track"><span class="bar in-progress" style="left: 82.5%; width: 17.5%"></span></div></td>
+    </tr>
+<tr class="">
+      <td class="wbs">6.2.1</td>
+      <td class="task depth-2">4분 30초 발표 리허설 및 자료 최종 점검</td>
+      <td class="owner"></td>
+      <td><span class="status in-progress">In progress</span></td>
+      <td>2026-06-14</td>
+      <td>2026-06-20</td>
+      <td class="num">7</td>
+      <td class="num">35</td>
+      <td class="gantt-cell"><div class="gantt-track"><span class="bar in-progress" style="left: 82.5%; width: 17.5%"></span></div></td>
+    </tr>
+<tr class="milestone-row">
+      <td class="wbs">6.3</td>
+      <td class="task depth-1">최종 발표 및 제출</td>
+      <td class="owner"></td>
+      <td><span class="status milestone">Milestone</span></td>
+      <td>2026-06-20</td>
+      <td>2026-06-20</td>
+      <td class="num">1</td>
+      <td class="num">0</td>
+      <td class="gantt-cell"><div class="gantt-track"><span class="milestone" style="left: 97.5%"></span></div></td>
+    </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <p class="note">
+        기준 기간: 2026-05-12 ~ 2026-06-20 · 생성 시각:
+        2026. 6. 16. PM 1:41 · 원본 파일:
+        LLM_Wiki_WBS_Gantt.xlsx
+      </p>
+    </main>
+  </body>
+</html>
